@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game List Builder</title>
+  <style>
+    :root{
+      --bg:#0f172a;
+      --card:#0b1224;
+      --muted:#9aa4b2;
+      --text:#e5e7eb;
+      --accent:#60a5fa;
+      --err:#ef4444;
+      --ok:#10b981;
+      --border:#1f2a44;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;padding:0;
+      background:linear-gradient(180deg,#0b1020,#0a0f1e 60%);
+      color:var(--text);
+      font-family:Segoe UI,system-ui,Arial,sans-serif;
+    }
+    header{
+      position:sticky;top:0;z-index:10;
+      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+      padding:12px 16px;border-bottom:1px solid var(--border);
+      background:rgba(10,15,30,.85);backdrop-filter:blur(8px);
+    }
+    header .title{font-weight:700;font-size:18px;letter-spacing:.3px}
+    header .spacer{flex:1}
+    .btn{
+      background:#111b33;border:1px solid var(--border);color:var(--text);
+      padding:8px 12px;border-radius:10px;cursor:pointer
+    }
+    .btn:hover{border-color:#27406b}
+    .btn.ok{border-color:#0b3b2e;background:#0d2c24}
+    .btn.err{border-color:#4d1c1c;background:#2a1313}
+    main{padding:16px}
+    .layout{display:grid;grid-template-columns: 2fr 1.3fr;gap:16px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.2)}
+    .card h2{margin:0;padding:12px 14px;border-bottom:1px solid var(--border);font-size:16px}
+    .card .body{padding:12px 14px}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    thead th{color:var(--muted);font-weight:600;text-align:left;border-bottom:1px solid var(--border);padding:8px}
+    tbody td{padding:8px;border-bottom:1px dashed #15203a}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{color:var(--muted);font-size:12px}
+    input,select{
+      width:100%;padding:10px;border-radius:10px;background:#0a142a;color:var(--text);
+      border:1px solid var(--border);outline:none
+    }
+    input:focus,select:focus{border-color:#2a4f7f}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .muted{color:var(--muted)}
+    .status{min-height:20px;color:var(--muted);font-size:12px;margin-top:6px}
+    .pill{display:inline-flex;align-items:center;gap:6px;background:#0c1b35;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-size:12px}
+    .search{display:flex;gap:8px;margin-bottom:8px}
+    .search input{flex:1}
+    .hint{font-size:12px;color:var(--muted)}
+    .gh{display:flex;gap:6px;align-items:center}
+    .gh input{width:240px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title">Game List Builder</div>
+    <div class="pill">Auto-saves to: <span id="currentPath" class="muted"></span></div>
+    <div class="spacer"></div>
+    <div class="gh">
+      <input id="ghToken" type="password" placeholder="GitHub token (repo scope)">
+      <button class="btn" onclick="onSetToken()">Set Token</button>
+      <button class="btn" onclick="onUpload()">Upload to GitHub</button>
+    </div>
+    <button class="btn" onclick="onNew()">New</button>
+    <button class="btn" onclick="onOpen()">Open…</button>
+    <button class="btn" onclick="onImport()">Import JSON…</button>
+    <button class="btn" onclick="onExport()">Export JSON…</button>
+    <button class="btn ok" onclick="onSave()">Save (Auto)</button>
+  </header>
+
+  <main>
+    <div class="layout">
+      <div class="card">
+        <h2>Games</h2>
+        <div class="body">
+          <div class="search">
+            <input id="filter" placeholder="Search by name/appid/username…">
+            <button class="btn" onclick="loadSteamApps()">Reload Steam List</button>
+          </div>
+          <div class="hint">Tip: Double-click a row to edit. Changes auto-save to the EXE folder.</div>
+          <table>
+            <thead><tr><th style="width:120px">AppID</th><th>Name</th><th style="width:220px">Username</th><th style="width:120px">Password</th><th style="width:90px">Actions</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+          <div id="emptyNote" class="hint" style="display:none;margin-top:8px">No games yet. Add one on the right.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Details</h2>
+        <div class="body">
+          <div class="grid">
+            <div>
+              <label>Steam Game (search – pick to fill)</label>
+              <input id="steamPick" list="steamlist" placeholder="Type to search Steam game…">
+              <datalist id="steamlist"></datalist>
+              <div class="hint">Source: ISteamApps/GetAppList/v2 (cached)</div>
+            </div>
+            <div>
+              <label>AppID</label>
+              <input id="appid" placeholder="e.g. 730">
+            </div>
+            <div>
+              <label>Name</label>
+              <input id="name" placeholder="Game name">
+            </div>
+            <div>
+              <label>Username</label>
+              <input id="username" placeholder="Account username">
+            </div>
+            <div>
+              <label>Password</label>
+              <input id="password" placeholder="Account password" type="password">
+            </div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn ok" onclick="onAddOrUpdate()" id="btnAdd">Add</button>
+            <button class="btn" onclick="onClear()">Clear</button>
+            <div class="status" id="status"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    'use strict';
+    window.addEventListener('error', (e) => {
+      const el = document.getElementById('status');
+      if (el) el.textContent = 'JS error: ' + (e && e.message ? e.message : 'unknown');
+      console.error(e);
+    });
+
+    const rows = document.getElementById('rows');
+    const emptyNote = document.getElementById('emptyNote');
+    const filterInput = document.getElementById('filter');
+    const steamPick = document.getElementById('steamPick');
+    const steamlist = document.getElementById('steamlist');
+    const statusEl = document.getElementById('status');
+    const btnAdd = document.getElementById('btnAdd');
+    const currentPathEl = document.getElementById('currentPath');
+    const ghTokenEl = document.getElementById('ghToken');
+
+    const ed = {
+      appid: document.getElementById('appid'),
+      name: document.getElementById('name'),
+      username: document.getElementById('username'),
+      password: document.getElementById('password'),
+    };
+
+    let GAMES = [];
+    let EDIT_INDEX = -1;
+    let STEAM_APPS = [];
+    const SUGGEST_LIMIT = 400;
+
+    function setStatus(msg){ statusEl.textContent = msg || ''; }
+    function escapeHtml(s){
+      const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+      return String(s||'').replace(/[&<>\"']/g, ch => map[ch]);
+    }
+
+    function render(){
+      const q = (filterInput.value||'').toLowerCase();
+      rows.innerHTML = '';
+      let count = 0;
+      GAMES.forEach((g, i) => {
+        const hit = !q || (g.appid||'').includes(q) || (g.name||'').toLowerCase().includes(q) || (g.username||'').toLowerCase().includes(q);
+        if (!hit) return;
+        count++;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${escapeHtml(g.appid)}</td>
+                        <td>${escapeHtml(g.name)}</td>
+                        <td>${escapeHtml(g.username)}</td>
+                        <td>${g.password ? '••••••' : ''}</td>
+                        <td>
+                          <button class="btn" onclick="onEdit(${i})">Edit</button>
+                          <button class="btn err" onclick="onDelete(${i})">Del</button>
+                        </td>`;
+        tr.ondblclick = () => onEdit(i);
+        rows.appendChild(tr);
+      });
+      emptyNote.style.display = (GAMES.length === 0 || count === 0) ? '' : 'none';
+    }
+
+    function fillForm(g){
+      ed.appid.value = g.appid || '';
+      ed.name.value = g.name || '';
+      ed.username.value = g.username || '';
+      ed.password.value = g.password || '';
+    }
+
+    function onEdit(i){
+      EDIT_INDEX = i;
+      fillForm(GAMES[i]);
+      btnAdd.textContent = 'Update';
+      setStatus('Editing row #' + (i+1));
+    }
+
+    function onClear(){
+      EDIT_INDEX = -1;
+      fillForm({});
+      btnAdd.textContent = 'Add';
+      setStatus('');
+    }
+
+    async function onAddOrUpdate(){
+      const item = {
+        appid: ed.appid.value.trim(),
+        name: ed.name.value.trim(),
+        username: ed.username.value.trim(),
+        password: ed.password.value,
+      };
+      if (!item.appid || !item.name || !item.username || !item.password){
+        setStatus('Please fill all fields.'); return;
+      }
+      if (EDIT_INDEX === -1){
+        const r = await window.pywebview.api.add_game(item);
+        if (r && r.ok){ GAMES.push(item); render(); onClear(); setStatus('Added (auto-saved).'); }
+        else setStatus(r && r.message || 'Add failed.');
+      } else {
+        const r = await window.pywebview.api.update_game(EDIT_INDEX, item);
+        if (r && r.ok){ GAMES[EDIT_INDEX] = item; render(); onClear(); setStatus('Updated (auto-saved).'); }
+        else setStatus(r && r.message || 'Update failed.');
+      }
+    }
+
+    async function onDelete(i){
+      if (!confirm('Delete "'+ (GAMES[i]?.name || '') + '"?')) return;
+      const r = await window.pywebview.api.delete_game(i);
+      if (r && r.ok){ GAMES.splice(i,1); render(); onClear(); setStatus('Deleted (auto-saved).'); }
+      else setStatus(r && r.message || 'Delete failed.');
+    }
+
+    async function onNew(){
+      const r = await window.pywebview.api.new();
+      if (r && r.ok){ GAMES = []; render(); onClear(); setStatus('New list (auto-saved).'); }
+    }
+    async function onOpen(){
+      const r = await window.pywebview.api.open_encrypted();
+      if (r && r.ok){
+        GAMES = r.games || []; render(); onClear();
+        currentPathEl.textContent = r.path || '';
+        setStatus('Loaded and auto-saved.');
+      } else setStatus(r && r.message || 'Open cancelled/failed.');
+    }
+    async function onImport(){
+      const r = await window.pywebview.api.import_json();
+      if (r && r.ok){
+        const st = await window.pywebview.api.get_state();
+        GAMES = st.games || []; render(); onClear();
+        currentPathEl.textContent = st.current_path || '';
+        setStatus('Imported and auto-saved. (' + (r.count||0) + ' items)');
+      } else setStatus(r && r.message || 'Import cancelled/failed.');
+    }
+    async function onExport(){
+      const r = await window.pywebview.api.export_json();
+      setStatus((r && r.ok) ? ('Exported: ' + (r.path || '')) : (r && r.message || 'Export failed.'));
+    }
+    async function onSave(){
+      const r = await window.pywebview.api.save_encrypted();
+      if (r && r.ok){
+        const st = await window.pywebview.api.get_state();
+        currentPathEl.textContent = st.current_path || '';
+        setStatus('Saved to EXE folder.');
+      } else setStatus(r && r.message || 'Save failed.');
+    }
+
+    // --- GitHub ---
+    async function onSetToken(){
+      const token = ghTokenEl.value || '';
+      const r = await window.pywebview.api.set_github_token(token);
+      setStatus((r && r.ok) ? 'GitHub token saved.' : 'Token not set.');
+    }
+    async function onUpload(){
+      setStatus('Uploading to GitHub…');
+      const r = await window.pywebview.api.upload_to_github();
+      if (r && r.ok){
+        const link = r.file_url || r.commit_url || '';
+        setStatus('Uploaded to GitHub.' + (link ? ' See console for URL.' : ''));
+        if (link) console.log('GitHub:', link);
+      } else setStatus(r && r.message || 'Upload failed.');
+    }
+
+    // ---------- Steam app suggestions (debounced) ----------
+    function scoreApp(app, q){
+      const name = (app.name||'').toLowerCase();
+      const id = String(app.appid||'');
+      if (!q) return 0;
+      if (q === id) return 1000;
+      if (name.startsWith(q)) return 800;
+      const ts = q.split(/\s+/).filter(Boolean);
+      let hit = 0;
+      for (const t of ts){
+        if (name.includes(t)) hit++;
+        else return -1;
+      }
+      return 300 + hit;
+    }
+    function updateSteamSuggestions(q){
+      const query = (q||'').trim().toLowerCase();
+      steamlist.innerHTML = '';
+      if (!STEAM_APPS.length || !query){ return; }
+      const scored = [];
+      for (const a of STEAM_APPS){
+        const s = scoreApp(a, query);
+        if (s >= 0) scored.push([s, a]);
+      }
+      scored.sort((a,b) => b[0]-a[0]);
+      const top = scored.slice(0, SUGGEST_LIMIT).map(x => x[1]);
+      for (const a of top){
+        const opt = document.createElement('option');
+        opt.value = a.name + ' – ' + a.appid;
+        steamlist.appendChild(opt);
+      }
+      setStatus('Suggestions: ' + top.length + ' / ' + (STEAM_APPS||[]).length);
+    }
+    let debTimer = null;
+    function onSteamInputChange(){ updateSteamSuggestions(steamPick.value || ''); }
+    function onSteamInputChangeDebounced(){
+      if (debTimer) clearTimeout(debTimer);
+      debTimer = setTimeout(onSteamInputChange, 120);
+    }
+    steamPick.addEventListener('input', onSteamInputChangeDebounced);
+    steamPick.addEventListener('change', () => {
+      const val = steamPick.value || '';
+      const i = val.lastIndexOf(' – ');
+      if (i > 0){
+        const name = val.slice(0, i).trim();
+        const appid = val.slice(i+3).trim();
+        ed.name.value = name; ed.appid.value = appid;
+        setStatus('Picked: ' + name + ' (' + appid + ')');
+      } else if (/^\d{3,}$/.test(val.trim())){
+        const app = (STEAM_APPS||[]).find(a => String(a.appid) === val.trim());
+        if (app){
+          ed.name.value = app.name || '';
+          ed.appid.value = String(app.appid||'');
+          setStatus('Picked by AppID.');
+        }
+      }
+    });
+
+    function populateSteamList(apps){
+      STEAM_APPS = (apps||[]).map(a => ({ name: a.name || '', appid: String(a.appid || '') }));
+    }
+    async function loadSteamApps(){
+      setStatus('Loading Steam app list…');
+      try{
+        const r = await window.pywebview.api.fetch_steam_applist();
+        if (r && r.ok){
+          populateSteamList(r.apps || []);
+          setStatus((r.cached ? 'Loaded cached list' : 'Loaded fresh list') + ' (' + ((r.apps && r.apps.length) ? r.apps.length : 0) + ' apps). Type to search.');
+          if (steamPick.value) updateSteamSuggestions(steamPick.value);
+        } else {
+          setStatus((r && r.message) ? r.message : 'Failed to load app list.');
+        }
+      }catch(e){ setStatus('Failed to load app list.'); }
+    }
+
+    async function init(){
+      try {
+        const st = await window.pywebview.api.get_state();
+        GAMES = st.games || [];
+        currentPathEl.textContent = st.current_path || '';
+        if (st && st.has_github_token){ setStatus('GitHub token loaded.'); }
+        render();
+        await loadSteamApps(); // auto-load Steam list without a click
+      } catch (e) {
+        setStatus('Init failed: ' + (e && e.message ? e.message : e));
+      }
+    }
+
+    // Robust init wiring for pywebview + DOM
+    (function wireInit(){
+      function safeInit(){
+        if (!window.pywebview || !window.pywebview.api) {
+          document.addEventListener('pywebviewready', init, { once: true });
+          return;
+        }
+        init();
+      }
+      if (document.readyState === 'loading'){
+        document.addEventListener('DOMContentLoaded', safeInit, { once:true });
+      } else {
+        safeInit();
+      }
+    })();
+  </script>
+</body>
+</html>
