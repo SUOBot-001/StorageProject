@@ -1,403 +1,244 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game List Builder</title>
-  <style>
-    :root{
-      --bg:#0f172a;
-      --card:#0b1224;
-      --muted:#9aa4b2;
-      --text:#e5e7eb;
-      --accent:#60a5fa;
-      --err:#ef4444;
-      --ok:#10b981;
-      --border:#1f2a44;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;padding:0;
-      background:linear-gradient(180deg,#0b1020,#0a0f1e 60%);
-      color:var(--text);
-      font-family:Segoe UI,system-ui,Arial,sans-serif;
-    }
-    header{
-      position:sticky;top:0;z-index:10;
-      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-      padding:12px 16px;border-bottom:1px solid var(--border);
-      background:rgba(10,15,30,.85);backdrop-filter:blur(8px);
-    }
-    header .title{font-weight:700;font-size:18px;letter-spacing:.3px}
-    header .spacer{flex:1}
-    .btn{
-      background:#111b33;border:1px solid var(--border);color:var(--text);
-      padding:8px 12px;border-radius:10px;cursor:pointer
-    }
-    .btn:hover{border-color:#27406b}
-    .btn.ok{border-color:#0b3b2e;background:#0d2c24}
-    .btn.err{border-color:#4d1c1c;background:#2a1313}
-    main{padding:16px}
-    .layout{display:grid;grid-template-columns: 2fr 1.3fr;gap:16px}
-    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.2)}
-    .card h2{margin:0;padding:12px 14px;border-bottom:1px solid var(--border);font-size:16px}
-    .card .body{padding:12px 14px}
-    table{width:100%;border-collapse:collapse;font-size:14px}
-    thead th{color:var(--muted);font-weight:600;text-align:left;border-bottom:1px solid var(--border);padding:8px}
-    tbody td{padding:8px;border-bottom:1px dashed #15203a}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    label{color:var(--muted);font-size:12px}
-    input,select{
-      width:100%;padding:10px;border-radius:10px;background:#0a142a;color:var(--text);
-      border:1px solid var(--border);outline:none
-    }
-    input:focus,select:focus{border-color:#2a4f7f}
-    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .muted{color:var(--muted)}
-    .status{min-height:20px;color:var(--muted);font-size:12px;margin-top:6px}
-    .pill{display:inline-flex;align-items:center;gap:6px;background:#0c1b35;border:1px solid var(--border);padding:6px 10px;border-radius:999px;font-size:12px}
-    .search{display:flex;gap:8px;margin-bottom:8px}
-    .search input{flex:1}
-    .hint{font-size:12px;color:var(--muted)}
-    .gh{display:flex;gap:6px;align-items:center}
-    .gh input{width:240px}
-  </style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Accounts & Steam Guard</title>
+
+  <!-- Google Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="suga_logo.png">
+  <meta name="theme-color" content="#1c1f2a">
 </head>
 <body>
-  <header>
-    <div class="title">Game List Builder</div>
-    <div class="pill">Auto-saves to: <span id="currentPath" class="muted"></span></div>
-    <div class="spacer"></div>
-    <div class="gh">
-      <input id="ghToken" type="password" placeholder="GitHub token (repo scope)">
-      <button class="btn" onclick="onSetToken()">Set Token</button>
-      <button class="btn" onclick="onUpload()">Upload to GitHub</button>
+  <header class="app-header">
+    <!-- Brand / Logo -->
+    <div class="brand">
+      <img class="brand-logo" src="suga_logo.png" alt="Logo" onerror="this.style.display='none'">
+      <div class="brand-title">Suga Game Store</div>
     </div>
-    <button class="btn" onclick="onNew()">New</button>
-    <button class="btn" onclick="onOpen()">Open…</button>
-    <button class="btn" onclick="onImport()">Import JSON…</button>
-    <button class="btn" onclick="onExport()">Export JSON…</button>
-    <button class="btn ok" onclick="onSave()">Save (Auto)</button>
   </header>
 
-  <main>
-    <div class="layout">
-      <div class="card">
-        <h2>Games</h2>
-        <div class="body">
-          <div class="search">
-            <input id="filter" placeholder="Search by name/appid/username…">
-            <button class="btn" onclick="loadSteamApps()">Reload Steam List</button>
-          </div>
-          <div class="hint">Tip: Double-click a row to edit. Changes auto-save to the EXE folder.</div>
-          <table>
-            <thead><tr><th style="width:120px">AppID</th><th>Name</th><th style="width:220px">Username</th><th style="width:120px">Password</th><th style="width:90px">Actions</th></tr></thead>
-            <tbody id="rows"></tbody>
-          </table>
-          <div id="emptyNote" class="hint" style="display:none;margin-top:8px">No games yet. Add one on the right.</div>
-        </div>
+  <!-- License strip -->
+  <div id="licStrip" class="license-strip hidden">
+    <div id="licIcon" class="badge">Status</div>
+    <div id="licText" class="lic-text"></div>
+    <div class="license-actions">
+      <button class="btn" id="btnActivate">Activate</button>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="searchbar" role="search">
+    <input id="search" type="search" placeholder="Search by game name or AppID…" aria-label="Search games" />
+    <button class="btn" id="clearBtn">Clear</button>
+    <button class="btn tgl" id="btnOnline" aria-pressed="false" title="Show only games that support online">Online</button> <!-- NEW -->
+    <button class="btn" id="btnRefresh" type="button" title="Re-download game list">Refresh</button>
+  </div>
+
+  <main class="layout">
+    <section>
+      <div id="grid" class="cardgrid"></div>
+      <div id="emptyNote" class="ghost hidden">No games match your search.</div>
+    </section>
+
+    <!-- Right panel -->
+    <aside id="panel" class="panel animate-in">
+      <div id="heroWrap" class="hero empty">
+        <img id="heroCover" alt="" />
+        <div id="heroPlaceholder">Please select a game to show details</div>
       </div>
 
-      <div class="card">
-        <h2>Details</h2>
-        <div class="body">
-          <div class="grid">
-            <div>
-              <label>Steam Game (search – pick to fill)</label>
-              <input id="steamPick" list="steamlist" placeholder="Type to search Steam game…">
-              <datalist id="steamlist"></datalist>
-              <div class="hint">Source: ISteamApps/GetAppList/v2 (cached)</div>
-            </div>
-            <div>
-              <label>AppID</label>
-              <input id="appid" placeholder="e.g. 730">
-            </div>
-            <div>
-              <label>Name</label>
-              <input id="name" placeholder="Game name">
-            </div>
-            <div>
-              <label>Username</label>
-              <input id="username" placeholder="Account username">
-            </div>
-            <div>
-              <label>Password</label>
-              <input id="password" placeholder="Account password" type="password">
-            </div>
-          </div>
-          <div class="row" style="margin-top:10px">
-            <button class="btn ok" onclick="onAddOrUpdate()" id="btnAdd">Add</button>
-            <button class="btn" onclick="onClear()">Clear</button>
-            <div class="status" id="status"></div>
-          </div>
-        </div>
+      <div id="gameTitle" class="detail-title">Select a game</div>
+      <div id="gameSub" class="detail-sub"></div>
+
+      <div class="row">
+        <div class="label">Username</div>
+        <input id="username" type="text" readonly />
+        <button class="icon-btn" onclick="copyField('username')" aria-label="Copy username" title="Copy username">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
       </div>
-    </div>
+
+      <!-- Password row removed from UI by request -->
+      <!-- invisible stubs to keep older app.js from throwing null errors -->
+      <div style="display:none">
+        <input id="password" type="password" readonly />
+        <button class="btn" id="btnShow" type="button">Show</button>
+      </div>
+
+      <!-- NEW: Login button -->
+<div class="row row-actions">
+  <button class="btn" id="btnLogin" type="button">Login to Steam</button>
+  <button class="btn primary" id="btnFetch" type="button">Fetch Steam Guard Code</button>
+</div>
+<div class="row">
+  <button class="btn" id="btnAddGame" type="button">Add game to my account</button>
+  <button class="btn" id="btnRemoveGame" type="button">Remove game from my account</button>
+</div>
+      <div id="codeWrap" class="row">
+        <div id="code" class="code">
+          <div class="placeholders" aria-hidden="true">‒ ‒ ‒ ‒ ‒</div>
+          <div class="digits" id="codeDigits"></div>
+        </div>
+        <button class="icon-btn" onclick="copyCode()" aria-label="Copy Steam Guard code" title="Copy code">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div id="status" class="ghost statusline"></div>
+      <hr class="hr mt-8">
+
+<h4 class="subhead">3rd Party Launcher Login</h4>
+
+<div class="row">
+  <div class="label">Platform</div>
+  <input id="tpPlatform" type="text" readonly />
+</div>
+
+<div class="row">
+  <div class="label">Username</div>
+  <input id="tpUser" type="text" readonly />
+  <button class="icon-btn" onclick="copyField('tpUser')" aria-label="Copy 3rd party username" title="Copy username">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+  </button>
+</div>
+
+<div class="row">
+  <div class="label">Password</div>
+  <input id="tpPass" type="password" readonly />
+  <button class="icon-btn"
+          onclick="copyField('tpPass')"
+          aria-label="Copy 3rd-party password"
+          title="Copy password">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         aria-hidden="true">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+  </button>
+</div>
+<!-- Notes / Instructions -->
+<div id="notesWrap" class="notes-wrap hidden">
+  <div class="subhead">Notes / Instructions</div>
+  <div id="notes" class="notes"></div>
+</div>
+
+    </aside>
   </main>
 
+  <!-- Bottom-center pagination -->
+  <nav class="pager-fixed" id="pager" aria-label="Pagination">
+    <button class="pagebtn" id="prevBtn" aria-label="Previous page">«</button>
+    <div class="pageinfo" id="pageInfo">Page 1 / 1</div>
+    <button class="pagebtn" id="nextBtn" aria-label="Next page">»</button>
+  </nav>
+
+  <!-- Activation Modal -->
+  <div id="actBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="actTitle">
+    <div class="modal animate-in">
+      <h3 id="actTitle">Activate License</h3>
+      <div id="actExpired" class="warn hidden"></div>
+      <div class="row">
+        <div class="label">CD-Key</div>
+        <input id="actKey" placeholder="xxxx-xxxx-xxxx-xxxx-xxxxxxxx" autocomplete="one-time-code">
+      </div>
+      <div class="row">
+        <div class="label">Steam Account</div>
+        <select id="actSteamSel" aria-label="Steam account"></select>
+        <input id="actSteam" type="text" style="display:none">
+      </div>
+      <div class="note" id="steamPickHint">Pick the account to bind this license. The most recent account is selected by default.</div>
+      <div class="note">First activation sets your plan duration (3M / 6M / 1Y). The key binds to this SteamID.</div>
+      <div class="actions">
+        <button class="btn" id="btnActCancel" type="button">Cancel</button>
+        <button class="btn primary" id="btnActDo" type="button">Activate</button>
+      </div>
+      <div id="actMsg" class="ghost mt-6"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite">Copied</div>
+
+  <script defer src="app.js"></script>
   <script>
-    'use strict';
-    window.addEventListener('error', (e) => {
-      const el = document.getElementById('status');
-      if (el) el.textContent = 'JS error: ' + (e && e.message ? e.message : 'unknown');
-      console.error(e);
-    });
-
-    const rows = document.getElementById('rows');
-    const emptyNote = document.getElementById('emptyNote');
-    const filterInput = document.getElementById('filter');
-    const steamPick = document.getElementById('steamPick');
-    const steamlist = document.getElementById('steamlist');
-    const statusEl = document.getElementById('status');
-    const btnAdd = document.getElementById('btnAdd');
-    const currentPathEl = document.getElementById('currentPath');
-    const ghTokenEl = document.getElementById('ghToken');
-
-    const ed = {
-      appid: document.getElementById('appid'),
-      name: document.getElementById('name'),
-      username: document.getElementById('username'),
-      password: document.getElementById('password'),
-    };
-
-    let GAMES = [];
-    let EDIT_INDEX = -1;
-    let STEAM_APPS = [];
-    const SUGGEST_LIMIT = 400;
-
-    function setStatus(msg){ statusEl.textContent = msg || ''; }
-    function escapeHtml(s){
-      const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
-      return String(s||'').replace(/[&<>\"']/g, ch => map[ch]);
+    function showToast() {
+      const t = document.getElementById('toast');
+      if (!t) return;
+      t.classList.add('show');
+      clearTimeout(showToast._tid);
+      showToast._tid = setTimeout(() => t.classList.remove('show'), 1200);
     }
-
-    function render(){
-      const q = (filterInput.value||'').toLowerCase();
-      rows.innerHTML = '';
-      let count = 0;
-      GAMES.forEach((g, i) => {
-        const hit = !q || (g.appid||'').includes(q) || (g.name||'').toLowerCase().includes(q) || (g.username||'').toLowerCase().includes(q);
-        if (!hit) return;
-        count++;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${escapeHtml(g.appid)}</td>
-                        <td>${escapeHtml(g.name)}</td>
-                        <td>${escapeHtml(g.username)}</td>
-                        <td>${g.password ? '••••••' : ''}</td>
-                        <td>
-                          <button class="btn" onclick="onEdit(${i})">Edit</button>
-                          <button class="btn err" onclick="onDelete(${i})">Del</button>
-                        </td>`;
-        tr.ondblclick = () => onEdit(i);
-        rows.appendChild(tr);
-      });
-      emptyNote.style.display = (GAMES.length === 0 || count === 0) ? '' : 'none';
-    }
-
-    function fillForm(g){
-      ed.appid.value = g.appid || '';
-      ed.name.value = g.name || '';
-      ed.username.value = g.username || '';
-      ed.password.value = g.password || '';
-    }
-
-    function onEdit(i){
-      EDIT_INDEX = i;
-      fillForm(GAMES[i]);
-      btnAdd.textContent = 'Update';
-      setStatus('Editing row #' + (i+1));
-    }
-
-    function onClear(){
-      EDIT_INDEX = -1;
-      fillForm({});
-      btnAdd.textContent = 'Add';
-      setStatus('');
-    }
-
-    async function onAddOrUpdate(){
-      const item = {
-        appid: ed.appid.value.trim(),
-        name: ed.name.value.trim(),
-        username: ed.username.value.trim(),
-        password: ed.password.value,
-      };
-      if (!item.appid || !item.name || !item.username || !item.password){
-        setStatus('Please fill all fields.'); return;
-      }
-      if (EDIT_INDEX === -1){
-        const r = await window.pywebview.api.add_game(item);
-        if (r && r.ok){ GAMES.push(item); render(); onClear(); setStatus('Added (auto-saved).'); }
-        else setStatus(r && r.message || 'Add failed.');
+    function copyField(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const val = el.value ?? '';
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(val).then(showToast);
       } else {
-        const r = await window.pywebview.api.update_game(EDIT_INDEX, item);
-        if (r && r.ok){ GAMES[EDIT_INDEX] = item; render(); onClear(); setStatus('Updated (auto-saved).'); }
-        else setStatus(r && r.message || 'Update failed.');
+        el.select();
+        document.execCommand('copy');
+        showToast();
       }
     }
+    function copyCode() {
+      const box = $("code");
+      const digitsEl = $("codeDigits");
+      // Prefer data-code, then #codeDigits text, never read #code.innerText
+      let code = (box && box.dataset && box.dataset.code) || "";
+      if (!code && digitsEl) code = (digitsEl.textContent || "").replace(/\s+/g, "").trim();
 
-    async function onDelete(i){
-      if (!confirm('Delete "'+ (GAMES[i]?.name || '') + '"?')) return;
-      const r = await window.pywebview.api.delete_game(i);
-      if (r && r.ok){ GAMES.splice(i,1); render(); onClear(); setStatus('Deleted (auto-saved).'); }
-      else setStatus(r && r.message || 'Delete failed.');
-    }
-
-    async function onNew(){
-      const r = await window.pywebview.api.new();
-      if (r && r.ok){ GAMES = []; render(); onClear(); setStatus('New list (auto-saved).'); }
-    }
-    async function onOpen(){
-      const r = await window.pywebview.api.open_encrypted();
-      if (r && r.ok){
-        GAMES = r.games || []; render(); onClear();
-        currentPathEl.textContent = r.path || '';
-        setStatus('Loaded and auto-saved.');
-      } else setStatus(r && r.message || 'Open cancelled/failed.');
-    }
-    async function onImport(){
-      const r = await window.pywebview.api.import_json();
-      if (r && r.ok){
-        const st = await window.pywebview.api.get_state();
-        GAMES = st.games || []; render(); onClear();
-        currentPathEl.textContent = st.current_path || '';
-        setStatus('Imported and auto-saved. (' + (r.count||0) + ' items)');
-      } else setStatus(r && r.message || 'Import cancelled/failed.');
-    }
-    async function onExport(){
-      const r = await window.pywebview.api.export_json();
-      setStatus((r && r.ok) ? ('Exported: ' + (r.path || '')) : (r && r.message || 'Export failed.'));
-    }
-    async function onSave(){
-      const r = await window.pywebview.api.save_encrypted();
-      if (r && r.ok){
-        const st = await window.pywebview.api.get_state();
-        currentPathEl.textContent = st.current_path || '';
-        setStatus('Saved to EXE folder.');
-      } else setStatus(r && r.message || 'Save failed.');
+      if (!code || !/^[A-Z0-9]{5}$/.test(code)) {
+        // keep UX message consistent with your app
+        setStatus && setStatus("No code to copy.");
+        return;
     }
 
-    // --- GitHub ---
-    async function onSetToken(){
-      const token = ghTokenEl.value || '';
-      const r = await window.pywebview.api.set_github_token(token);
-      setStatus((r && r.ok) ? 'GitHub token saved.' : 'Token not set.');
-    }
-    async function onUpload(){
-      setStatus('Uploading to GitHub…');
-      const r = await window.pywebview.api.upload_to_github();
-      if (r && r.ok){
-        const link = r.file_url || r.commit_url || '';
-        setStatus('Uploaded to GitHub.' + (link ? ' See console for URL.' : ''));
-        if (link) console.log('GitHub:', link);
-      } else setStatus(r && r.message || 'Upload failed.');
-    }
-
-    // ---------- Steam app suggestions (debounced) ----------
-    function scoreApp(app, q){
-      const name = (app.name||'').toLowerCase();
-      const id = String(app.appid||'');
-      if (!q) return 0;
-      if (q === id) return 1000;
-      if (name.startsWith(q)) return 800;
-      const ts = q.split(/\s+/).filter(Boolean);
-      let hit = 0;
-      for (const t of ts){
-        if (name.includes(t)) hit++;
-        else return -1;
-      }
-      return 300 + hit;
-    }
-    function updateSteamSuggestions(q){
-      const query = (q||'').trim().toLowerCase();
-      steamlist.innerHTML = '';
-      if (!STEAM_APPS.length || !query){ return; }
-      const scored = [];
-      for (const a of STEAM_APPS){
-        const s = scoreApp(a, query);
-        if (s >= 0) scored.push([s, a]);
-      }
-      scored.sort((a,b) => b[0]-a[0]);
-      const top = scored.slice(0, SUGGEST_LIMIT).map(x => x[1]);
-      for (const a of top){
-        const opt = document.createElement('option');
-        opt.value = a.name + ' – ' + a.appid;
-        steamlist.appendChild(opt);
-      }
-      setStatus('Suggestions: ' + top.length + ' / ' + (STEAM_APPS||[]).length);
-    }
-    let debTimer = null;
-    function onSteamInputChange(){ updateSteamSuggestions(steamPick.value || ''); }
-    function onSteamInputChangeDebounced(){
-      if (debTimer) clearTimeout(debTimer);
-      debTimer = setTimeout(onSteamInputChange, 120);
-    }
-    steamPick.addEventListener('input', onSteamInputChangeDebounced);
-    steamPick.addEventListener('change', () => {
-      const val = steamPick.value || '';
-      const i = val.lastIndexOf(' – ');
-      if (i > 0){
-        const name = val.slice(0, i).trim();
-        const appid = val.slice(i+3).trim();
-        ed.name.value = name; ed.appid.value = appid;
-        setStatus('Picked: ' + name + ' (' + appid + ')');
-      } else if (/^\d{3,}$/.test(val.trim())){
-        const app = (STEAM_APPS||[]).find(a => String(a.appid) === val.trim());
-        if (app){
-          ed.name.value = app.name || '';
-          ed.appid.value = String(app.appid||'');
-          setStatus('Picked by AppID.');
-        }
-      }
-    });
-
-    function populateSteamList(apps){
-      STEAM_APPS = (apps||[]).map(a => ({ name: a.name || '', appid: String(a.appid || '') }));
-    }
-    async function loadSteamApps(){
-      setStatus('Loading Steam app list…');
-      try{
-        const r = await window.pywebview.api.fetch_steam_applist();
-        if (r && r.ok){
-          populateSteamList(r.apps || []);
-          setStatus((r.cached ? 'Loaded cached list' : 'Loaded fresh list') + ' (' + ((r.apps && r.apps.length) ? r.apps.length : 0) + ' apps). Type to search.');
-          if (steamPick.value) updateSteamSuggestions(steamPick.value);
-        } else {
-          setStatus((r && r.message) ? r.message : 'Failed to load app list.');
-        }
-      }catch(e){ setStatus('Failed to load app list.'); }
-    }
-
-    async function init(){
-      try {
-        const st = await window.pywebview.api.get_state();
-        GAMES = st.games || [];
-        currentPathEl.textContent = st.current_path || '';
-        if (st && st.has_github_token){ setStatus('GitHub token loaded.'); }
-        render();
-        await loadSteamApps(); // auto-load Steam list without a click
-      } catch (e) {
-        setStatus('Init failed: ' + (e && e.message ? e.message : e));
-      }
-    }
-
-    // Robust init wiring for pywebview + DOM
-    (function wireInit(){
-      function safeInit(){
-        if (!window.pywebview || !window.pywebview.api) {
-          document.addEventListener('pywebviewready', init, { once: true });
-          return;
-        }
-        init();
-      }
-      if (document.readyState === 'loading'){
-        document.addEventListener('DOMContentLoaded', safeInit, { once:true });
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(code).then(showToast);
       } else {
-        safeInit();
+        const ta = document.createElement("textarea");
+        ta.value = code;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        showToast();
       }
-    })();
+    }
+    function setCodeDigits(code) {
+      const digitsEl = $("codeDigits");
+      const box = $("code");
+      if (!digitsEl || !box) return;
+
+      const clean = (code || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 5);
+      digitsEl.textContent = clean.split("").join(" ");
+
+      // hide/show placeholders so copy never grabs them
+      const ph = box.querySelector(".placeholders");
+      if (ph) ph.style.display = clean ? "none" : "";
+
+      // Keep a data attribute for robust copy
+      box.dataset.code = clean;
+    }
   </script>
 </body>
 </html>
