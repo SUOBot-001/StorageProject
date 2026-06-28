@@ -8,6 +8,7 @@ let onlineFilter = false;
 let cachedHWID = null;
 let selectedSteamID = null;
 let steamAccounts = [];
+let currentPlan = null;  // activated plan, e.g. 'LIFETIME', '1YEAR', 'STANDARD'
 
 
 // Color cover gradients based on the title to look unique and pretty as a fallback
@@ -164,6 +165,9 @@ function selectGame(game) {
     badge.classList.add("hidden");
   }
 
+  // Enforce online-game plan ruleset on the action buttons
+  applyOnlineLockToSelected();
+
   // Populate Steam Inputs
   document.getElementById("steam-username").value = game.username;
   document.getElementById("steam-username").classList.remove("disabled-input");
@@ -309,6 +313,11 @@ function applyFilters() {
 function handleFetchSteamGuard() {
   if (!selectedGame) return;
 
+  if (selectedGame.online && !isOnlineAllowed()) {
+    showToast("Online games require a 1 Year or Lifetime plan.", 'error');
+    return;
+  }
+
   const btn = document.getElementById("btn-fetch-guard");
   const prevText = btn.innerText;
   
@@ -366,14 +375,42 @@ function mockFetchSteamGuard(username) {
   });
 }
 
+// Ruleset: ONLINE games require a 1 Year or Lifetime plan
+function isOnlineAllowed() {
+  const p = (currentPlan || '').toUpperCase();
+  return p === '1YEAR' || p === 'LIFETIME';
+}
+
+// Lock/unlock the launch + guard buttons based on the selected game's online tag and plan
+function applyOnlineLockToSelected() {
+  const loginBtn = document.getElementById("btn-login-steam");
+  const guardBtn = document.getElementById("btn-fetch-guard");
+  const locked = !!(selectedGame && selectedGame.online && !isOnlineAllowed());
+  if (loginBtn) {
+    loginBtn.disabled = locked;
+    loginBtn.classList.toggle("disabled-input", locked);
+    loginBtn.title = locked ? "Online games require a 1 Year or Lifetime plan" : "";
+  }
+  if (guardBtn) {
+    guardBtn.disabled = locked;
+    guardBtn.classList.toggle("disabled-input", locked);
+  }
+  return locked;
+}
+
 // Trigger Steam Auto-Login via Python subprocess launcher
 function handleSteamLogin() {
   if (!selectedGame) return;
 
+  if (selectedGame.online && !isOnlineAllowed()) {
+    showToast("Online games require a 1 Year or Lifetime plan.", 'error');
+    return;
+  }
+
   showToast("Auto-Login: Launching Steam Client...", 'info');
 
   if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_steam) {
-    window.pywebview.api.launch_steam(selectedGame.username).then(res => {
+    window.pywebview.api.launch_steam(selectedGame.username, !!selectedGame.online).then(res => {
       if (res.success) {
         showToast("Steam Client launching. Fetching Guard Code in background...", 'success');
       } else {
@@ -577,6 +614,7 @@ function updateActivationUI(isActive, planName = null, cdKey = null) {
     if (bannerPlan) {
       bannerPlan.innerText = `Plan: ${planName || 'membership'}`;
     }
+    currentPlan = planName || null;
     if (modalStatus) {
       modalStatus.innerText = "ACTIVE";
       modalStatus.style.color = "var(--accent-glow)";
@@ -606,6 +644,7 @@ function updateActivationUI(isActive, planName = null, cdKey = null) {
     if (bannerPlan) {
       bannerPlan.innerText = "Plan: Not Activate Yet";
     }
+    currentPlan = null;
     if (modalStatus) {
       modalStatus.innerText = "Not Activate Yet";
       modalStatus.style.color = "#ef4444";
@@ -630,6 +669,9 @@ function updateActivationUI(isActive, planName = null, cdKey = null) {
     if (btnActivate) { btnActivate.disabled = false; btnActivate.classList.remove("disabled-input"); }
     if (btnExisting) { btnExisting.disabled = false; btnExisting.classList.remove("disabled-input"); }
   }
+
+  // Re-evaluate online-game lock now that the plan may have changed
+  applyOnlineLockToSelected();
 }
 
 // Silently checks activation on the server in the background
@@ -1039,7 +1081,18 @@ function initUI() {
       });
     }
     populateSteamIDDropdown().then(() => {
-      checkActivationStatusSilently();
+      const runSilentCheck = () => checkActivationStatusSilently();
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.verify_local_cdkey) {
+        window.pywebview.api.verify_local_cdkey().then(r => {
+          if (r && r.status === 'deleted') {
+            showToast("Activation removed: CD Key no longer exists on the server.", 'error');
+            updateActivationUI(false);
+          }
+          runSilentCheck();
+        }).catch(runSilentCheck);
+      } else {
+        runSilentCheck();
+      }
     });
   }, 500);
 }
