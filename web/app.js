@@ -544,11 +544,17 @@ function handleExistingUser() {
 }
 
 // Helper to update visual subscription activation state across the UI
-function updateActivationUI(isActive, planName) {
+function updateActivationUI(isActive, planName = null) {
   const bannerBadge = document.getElementById("banner-status-badge");
   const bannerPlan = document.getElementById("banner-plan-text");
   const modalStatus = document.getElementById("modal-status-val");
   const modalPlan = document.getElementById("modal-plan-val");
+
+  const btnDownload = document.getElementById("btn-download-dat");
+  const btnRefresh = document.getElementById("btn-refresh");
+  const btnSearch = document.getElementById("search-input");
+  const detailsModal = document.getElementById("details-modal");
+  const btnCloseModal = document.getElementById("btn-close-modal");
 
   if (isActive) {
     if (bannerBadge) {
@@ -565,6 +571,11 @@ function updateActivationUI(isActive, planName) {
     if (modalPlan) {
       modalPlan.innerText = planName || "Standard";
     }
+    
+    if (btnDownload) btnDownload.disabled = false;
+    if (btnRefresh) btnRefresh.disabled = false;
+    if (btnSearch) btnSearch.disabled = false;
+    if (btnCloseModal) btnCloseModal.style.display = "block";
   } else {
     if (bannerBadge) {
       bannerBadge.innerText = "INACTIVE";
@@ -580,6 +591,13 @@ function updateActivationUI(isActive, planName) {
     if (modalPlan) {
       modalPlan.innerText = "Not Activate Yet";
     }
+
+    if (btnDownload) btnDownload.disabled = true;
+    if (btnRefresh) btnRefresh.disabled = true;
+    if (btnSearch) btnSearch.disabled = true;
+    
+    if (detailsModal) detailsModal.classList.remove("hidden");
+    if (btnCloseModal) btnCloseModal.style.display = "none";
   }
 }
 
@@ -824,7 +842,8 @@ function initUI() {
   });
 
   document.getElementById("details-modal").addEventListener("click", (e) => {
-    if (e.target.id === "details-modal") {
+    const btnCloseModal = document.getElementById("btn-close-modal");
+    if (e.target.id === "details-modal" && btnCloseModal.style.display !== "none") {
       document.getElementById("details-modal").classList.add("hidden");
     }
   });
