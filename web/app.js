@@ -470,8 +470,8 @@ function handleActivateCDKey() {
           status.innerText = result.message;
           status.className = "cdkey-status success";
           showToast(result.message, 'success');
-          input.value = "";
-          updateActivationUI(true, result.activation_type || 'Standard');
+          updateActivationUI(true, result.activation_type || 'Standard', result.cd_key || cdKey);
+          autoCloseActivationModal();
         } else {
           status.innerText = result.message;
           status.className = "cdkey-status error";
@@ -487,8 +487,8 @@ function handleActivateCDKey() {
         status.innerText = "CD Key validated! (Preview Mode)";
         status.className = "cdkey-status success";
         showToast("CD Key activated successfully. (Preview Mode)", 'success');
-        input.value = "";
-        updateActivationUI(true, 'Standard');
+        updateActivationUI(true, 'Standard', cdKey);
+        autoCloseActivationModal();
       }, 1000);
     }
   });
@@ -516,7 +516,8 @@ function handleExistingUser() {
         status.innerText = result.message;
         status.className = "cdkey-status success";
         showToast(result.message, 'success');
-        updateActivationUI(true, result.activation_type || 'Standard');
+        updateActivationUI(true, result.activation_type || 'Standard', result.cd_key);
+        autoCloseActivationModal();
       } else {
         status.innerText = result.message;
         status.className = "cdkey-status error";
@@ -539,12 +540,21 @@ function handleExistingUser() {
       status.className = "cdkey-status success";
       showToast("Existing user validated! (Preview Mode)", 'success');
       updateActivationUI(true, 'Standard');
+      autoCloseActivationModal();
     }, 1500);
   }
 }
 
+// Auto-close the activation/details modal shortly after a successful activation
+function autoCloseActivationModal() {
+  setTimeout(() => {
+    const modal = document.getElementById("details-modal");
+    if (modal) modal.classList.add("hidden");
+  }, 1500);
+}
+
 // Helper to update visual subscription activation state across the UI
-function updateActivationUI(isActive, planName = null) {
+function updateActivationUI(isActive, planName = null, cdKey = null) {
   const bannerBadge = document.getElementById("banner-status-badge");
   const bannerPlan = document.getElementById("banner-plan-text");
   const modalStatus = document.getElementById("modal-status-val");
@@ -555,6 +565,9 @@ function updateActivationUI(isActive, planName = null) {
   const btnSearch = document.getElementById("search-input");
   const detailsModal = document.getElementById("details-modal");
   const btnCloseModal = document.getElementById("btn-close-modal");
+  const cdkeyInput = document.getElementById("cdkey-input");
+  const btnActivate = document.getElementById("btn-activate-cdkey");
+  const btnExisting = document.getElementById("btn-existing-user");
 
   if (isActive) {
     if (bannerBadge) {
@@ -576,6 +589,15 @@ function updateActivationUI(isActive, planName = null) {
     if (btnRefresh) btnRefresh.disabled = false;
     if (btnSearch) btnSearch.disabled = false;
     if (btnCloseModal) btnCloseModal.style.display = "block";
+
+    // Activated: show the key, grey out the field and activation buttons
+    if (cdkeyInput) {
+      if (cdKey) cdkeyInput.value = cdKey;
+      cdkeyInput.readOnly = true;
+      cdkeyInput.classList.add("disabled-input");
+    }
+    if (btnActivate) { btnActivate.disabled = true; btnActivate.classList.add("disabled-input"); }
+    if (btnExisting) { btnExisting.disabled = true; btnExisting.classList.add("disabled-input"); }
   } else {
     if (bannerBadge) {
       bannerBadge.innerText = "INACTIVE";
@@ -598,6 +620,15 @@ function updateActivationUI(isActive, planName = null) {
     
     if (detailsModal) detailsModal.classList.remove("hidden");
     if (btnCloseModal) btnCloseModal.style.display = "none";
+
+    // Not activated: restore the field and activation buttons
+    if (cdkeyInput) {
+      cdkeyInput.value = "";
+      cdkeyInput.readOnly = false;
+      cdkeyInput.classList.remove("disabled-input");
+    }
+    if (btnActivate) { btnActivate.disabled = false; btnActivate.classList.remove("disabled-input"); }
+    if (btnExisting) { btnExisting.disabled = false; btnExisting.classList.remove("disabled-input"); }
   }
 }
 
@@ -607,7 +638,7 @@ function checkActivationStatusSilently() {
   if (window.pywebview && window.pywebview.api && window.pywebview.api.check_existing_user) {
     window.pywebview.api.check_existing_user(currentId).then(result => {
       if (result && result.status === 'success') {
-        updateActivationUI(true, result.activation_type || 'Standard');
+        updateActivationUI(true, result.activation_type || 'Standard', result.cd_key);
       } else {
         updateActivationUI(false);
       }
