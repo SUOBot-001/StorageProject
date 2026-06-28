@@ -531,65 +531,6 @@ function handleActivateCDKey() {
   });
 }
 
-// Handle Existing User - check server using selected/active SteamID
-function handleExistingUser() {
-  const status = document.getElementById("cdkey-status");
-  const btn = document.getElementById("btn-existing-user");
-  if (!status || !btn) return;
-
-  const prevText = btn.innerText;
-  btn.innerText = "Checking...";
-  btn.disabled = true;
-  status.innerText = "";
-  status.className = "cdkey-status";
-
-  const currentId = selectedSteamID || null;
-  if (window.pywebview && window.pywebview.api && window.pywebview.api.check_existing_user) {
-    window.pywebview.api.check_existing_user(currentId).then(result => {
-      btn.innerText = prevText;
-      btn.disabled = false;
-
-      if (result.status === 'success') {
-        status.innerText = result.message;
-        status.className = "cdkey-status success";
-        showToast(result.message, 'success');
-        updateActivationUI(true, result.activation_type || 'Standard', result.cd_key);
-        autoCloseActivationModal();
-      } else {
-        status.innerText = result.message;
-        status.className = "cdkey-status error";
-        showToast(result.message, 'error');
-        updateActivationUI(false);
-      }
-    }).catch(err => {
-      btn.innerText = prevText;
-      btn.disabled = false;
-      status.innerText = "Something went wrong. Please try again.";
-      status.className = "cdkey-status error";
-      updateActivationUI(false);
-    });
-  } else {
-    // Web Preview
-    setTimeout(() => {
-      btn.innerText = prevText;
-      btn.disabled = false;
-      status.innerText = "Account found & activated! (Preview Mode)";
-      status.className = "cdkey-status success";
-      showToast("Existing user validated! (Preview Mode)", 'success');
-      updateActivationUI(true, 'Standard');
-      autoCloseActivationModal();
-    }, 1500);
-  }
-}
-
-// Auto-close the activation/details modal shortly after a successful activation
-function autoCloseActivationModal() {
-  setTimeout(() => {
-    const modal = document.getElementById("details-modal");
-    if (modal) modal.classList.add("hidden");
-  }, 1500);
-}
-
 // Helper to update visual subscription activation state across the UI
 function updateActivationUI(isActive, planName = null, cdKey = null) {
   const bannerBadge = document.getElementById("banner-status-badge");
@@ -604,7 +545,6 @@ function updateActivationUI(isActive, planName = null, cdKey = null) {
   const btnCloseModal = document.getElementById("btn-close-modal");
   const cdkeyInput = document.getElementById("cdkey-input");
   const btnActivate = document.getElementById("btn-activate-cdkey");
-  const btnExisting = document.getElementById("btn-existing-user");
 
   if (isActive) {
     if (bannerBadge) {
@@ -635,7 +575,6 @@ function updateActivationUI(isActive, planName = null, cdKey = null) {
       cdkeyInput.classList.add("disabled-input");
     }
     if (btnActivate) { btnActivate.disabled = true; btnActivate.classList.add("disabled-input"); }
-    if (btnExisting) { btnExisting.disabled = true; btnExisting.classList.add("disabled-input"); }
   } else {
     if (bannerBadge) {
       bannerBadge.innerText = "INACTIVE";
@@ -667,7 +606,6 @@ function updateActivationUI(isActive, planName = null, cdKey = null) {
       cdkeyInput.classList.remove("disabled-input");
     }
     if (btnActivate) { btnActivate.disabled = false; btnActivate.classList.remove("disabled-input"); }
-    if (btnExisting) { btnExisting.disabled = false; btnExisting.classList.remove("disabled-input"); }
   }
 
   // Re-evaluate online-game lock now that the plan may have changed
@@ -1061,7 +999,6 @@ function initUI() {
 
   // CD Key Activation
   document.getElementById("btn-activate-cdkey").addEventListener("click", handleActivateCDKey);
-  document.getElementById("btn-existing-user").addEventListener("click", handleExistingUser);
   document.getElementById("btn-reset-activation").addEventListener("click", handleResetActivation);
 
   // Also allow Enter key in CD Key input
