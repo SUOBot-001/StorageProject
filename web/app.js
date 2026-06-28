@@ -440,7 +440,7 @@ function handleActivateCDKey() {
   const status = document.getElementById("cdkey-status");
   if (!input || !status) return;
 
-  const cdKey = input.value.trim().toUpperCase();
+  const cdKey = input.value.trim();
   if (!cdKey) {
     status.innerText = "Please enter a CD Key.";
     status.className = "cdkey-status error";
