@@ -187,6 +187,8 @@ function selectGame(game) {
   const tpArrow = document.getElementById("third-party-arrow");
   const lblTpUsername = document.getElementById("lbl-tp-username");
   const lblTpPassword = document.getElementById("lbl-tp-password");
+  const tpNotesInput = document.getElementById("tp-notes");
+  const lblTpNotes = document.getElementById("lbl-tp-notes");
 
   if (platform === "Steam" || platform === "None" || platform === "") {
     tpContent.style.display = "flex";
@@ -195,9 +197,11 @@ function selectGame(game) {
     tpPlatformInput.value = "Steam";
     tpUsernameInput.value = game.username;
     tpPasswordInput.value = "";
+    if (tpNotesInput) tpNotesInput.value = game.notes || game.tp_notes || "";
     
     lblTpUsername.innerText = "Username";
     lblTpPassword.innerText = "Password";
+    if (lblTpNotes) lblTpNotes.innerText = "Notes";
   } else {
     tpSection.classList.remove("disabled-section");
     tpContent.style.display = "flex";
@@ -214,9 +218,11 @@ function selectGame(game) {
     
     tpUsernameInput.value = customUserVal;
     tpPasswordInput.value = customPassVal;
+    if (tpNotesInput) tpNotesInput.value = game[`${prefix}_notes`] || game.notes || "";
     
     lblTpUsername.innerText = game.custom_id_label || `${platform} ID / Username`;
     lblTpPassword.innerText = game.custom_password_label || `${platform} Password`;
+    if (lblTpNotes) lblTpNotes.innerText = game.custom_note_label || "Notes";
   }
 
   showToast(`Selected: ${game.name}`, 'info');
@@ -940,6 +946,15 @@ function initUI() {
 
   document.getElementById("btn-copy-tp-username").addEventListener("click", () => {
     if (selectedGame) copyToClipboard(selectedGame.username, "Username");
+  });
+
+  document.getElementById("btn-copy-tp-notes").addEventListener("click", () => {
+    const notes = document.getElementById("tp-notes").value;
+    if (notes) {
+      copyToClipboard(notes, "Notes");
+    } else {
+      showToast("Notes is empty.", "error");
+    }
   });
 
   document.getElementById("btn-copy-tp-password").addEventListener("click", () => {

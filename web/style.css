@@ -26,10 +26,10 @@ body.app-container {
   background-color: var(--bg-main);
   color: var(--text-main);
   font-family: var(--font-family);
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
   user-select: none;
 }
 
@@ -146,6 +146,7 @@ body.app-container {
   flex: 1;
   display: flex;
   overflow: hidden;
+  min-height: 500px;
 }
 
 .left-panel {
@@ -154,7 +155,7 @@ body.app-container {
   display: flex;
   flex-direction: column;
   padding: 16px;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .right-panel {
