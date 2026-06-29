@@ -778,30 +778,6 @@ function initUI() {
   renderGrid();
 
   // Hook Title Bar Buttons
-  document.getElementById("win-close").addEventListener("click", () => {
-    if (window.pywebview && window.pywebview.api && window.pywebview.api.close) {
-      window.pywebview.api.close();
-    } else {
-      window.close();
-    }
-  });
-
-  document.getElementById("win-min").addEventListener("click", () => {
-    if (window.pywebview && window.pywebview.api && window.pywebview.api.minimize) {
-      window.pywebview.api.minimize();
-    } else {
-      showToast("Simulation: Window Minimized", 'info');
-    }
-  });
-
-  document.getElementById("win-max").addEventListener("click", () => {
-    if (window.pywebview && window.pywebview.api && window.pywebview.api.maximize) {
-      window.pywebview.api.maximize();
-    } else {
-      showToast("Simulation: Window Maximized", 'info');
-    }
-  });
-
   // Modal triggers
   document.getElementById("btn-show-details").addEventListener("click", () => {
     document.getElementById("details-modal").classList.remove("hidden");
@@ -1047,25 +1023,3 @@ function initUI() {
 
 // Start Initialization
 window.addEventListener("DOMContentLoaded", initUI);
-
-// ── Window Resize Handles (frameless window) ──────────────────────────────
-// Maps CSS direction names to WM_SYSCOMMAND SC_SIZE direction sub-commands
-// 1=left, 2=right, 3=top, 4=topleft, 5=topright, 6=bottom, 7=bottomleft, 8=bottomright
-const RESIZE_DIR = {
-  w: 1, e: 2, n: 3, nw: 4, ne: 5, s: 6, sw: 7, se: 8
-};
-
-document.querySelectorAll(".resize-handle").forEach(el => {
-  el.addEventListener("mousedown", (e) => {
-    if (e.button !== 0) return; // Only left mouse button
-    e.preventDefault();
-    e.stopPropagation();
-    const dir = RESIZE_DIR[el.dataset.dir];
-    if (!dir) return;
-
-    // Call Python backend to trigger native OS resize
-    if (window.pywebview && window.pywebview.api && window.pywebview.api.start_resize) {
-      window.pywebview.api.start_resize(dir);
-    }
-  });
-});
