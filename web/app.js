@@ -191,19 +191,13 @@ function selectGame(game) {
   const lblTpNotes = document.getElementById("lbl-tp-notes");
 
   if (platform === "Steam" || platform === "None" || platform === "") {
-    // Steam-default games use the main Steam controller above; hide the duplicate here.
+    // Pure Steam game: no separate launcher. The Steam login is shown ONLY in
+    // the main Steam Interface Controller above, never duplicated here.
     tpSection.style.display = "none";
-    tpContent.style.display = "flex";
-    if (tpArrow) tpArrow.style.transform = "rotate(90deg)";
-
-    tpPlatformInput.value = "Steam";
-    tpUsernameInput.value = game.username;
+    tpPlatformInput.value = "";
+    tpUsernameInput.value = "";
     tpPasswordInput.value = "";
-    if (tpNotesInput) tpNotesInput.value = game.notes || game.tp_notes || "";
-
-    lblTpUsername.innerText = "Username";
-    lblTpPassword.innerText = "Password";
-    if (lblTpNotes) lblTpNotes.innerText = "Notes";
+    if (tpNotesInput) tpNotesInput.value = "";
   } else {
     tpSection.style.display = "flex";
     tpSection.classList.remove("disabled-section");
