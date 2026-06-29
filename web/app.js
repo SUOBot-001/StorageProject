@@ -1047,3 +1047,30 @@ function initUI() {
 
 // Start Initialization
 window.addEventListener("DOMContentLoaded", initUI);
+
+// ── Window Resize Handles (frameless window) ──────────────────────────────
+// Maps CSS direction names to Windows WM_NCLBUTTONDOWN hit-test codes
+const RESIZE_HT = {
+  n:  12, // HTTOP
+  s:  15, // HTBOTTOM
+  e:  11, // HTRIGHT
+  w:  10, // HTLEFT
+  ne: 14, // HTTOPRIGHT
+  nw: 13, // HTTOPLEFT
+  se: 17, // HTBOTTOMRIGHT
+  sw: 16, // HTBOTTOMLEFT
+};
+
+document.querySelectorAll(".resize-handle").forEach(el => {
+  el.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return; // Only left mouse button
+    const dir = el.dataset.dir;
+    const htCode = RESIZE_HT[dir];
+    if (!htCode) return;
+
+    // Call Python backend to trigger native OS resize
+    if (window.pywebview && window.pywebview.api && window.pywebview.api.start_resize) {
+      window.pywebview.api.start_resize(htCode);
+    }
+  });
+});
