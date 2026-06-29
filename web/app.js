@@ -194,10 +194,8 @@ function selectGame(game) {
     // Pure Steam game: no separate launcher. The Steam login is shown ONLY in
     // the main Steam Interface Controller above, never duplicated here.
     tpSection.style.display = "none";
-    tpPlatformInput.value = "";
     tpUsernameInput.value = "";
     tpPasswordInput.value = "";
-    if (tpNotesInput) tpNotesInput.value = "";
   } else {
     tpSection.style.display = "flex";
     tpSection.classList.remove("disabled-section");
@@ -215,14 +213,24 @@ function selectGame(game) {
     
     tpUsernameInput.value = customUserVal;
     tpPasswordInput.value = customPassVal;
-    if (tpNotesInput) tpNotesInput.value = game[`${prefix}_notes`] || game.notes || "";
     
     lblTpUsername.innerText = game.custom_id_label || `${platform} ID / Username`;
     lblTpPassword.innerText = game.custom_password_label || `${platform} Password`;
-    if (lblTpNotes) lblTpNotes.innerText = game.custom_note_label || "Notes";
   }
 
   showToast(`Selected: ${game.name}`, 'info');
+
+  // Global Notes
+  const globalNote = game.note || game.notes || "";
+  const notesSection = document.getElementById("game-notes-section");
+  if (globalNote) {
+    notesSection.style.display = "block";
+    notesSection.classList.remove("disabled-section");
+    document.getElementById("global-game-notes").value = globalNote;
+  } else {
+    notesSection.style.display = "none";
+    document.getElementById("global-game-notes").value = "";
+  }
 
   // Auto-detect Steam profile
   fetchSteamProfile();
@@ -918,17 +926,20 @@ function initUI() {
   });
 
   document.getElementById("btn-copy-tp-username").addEventListener("click", () => {
-    if (selectedGame) copyToClipboard(selectedGame.username, "Username");
-  });
-
-  document.getElementById("btn-copy-tp-notes").addEventListener("click", () => {
-    const notes = document.getElementById("tp-notes").value;
-    if (notes) {
-      copyToClipboard(notes, "Notes");
+    const user = document.getElementById("tp-username").value;
+    if (user && user !== "N/A") {
+      copyToClipboard(user, "3rd-Party Username");
     } else {
-      showToast("Notes is empty.", "error");
+      showToast("Username is empty.", "error");
     }
   });
+
+  const btnCopyGlobalNotes = document.getElementById("btn-copy-global-notes");
+  if (btnCopyGlobalNotes) {
+    btnCopyGlobalNotes.addEventListener("click", () => {
+      copyToClipboard(document.getElementById("global-game-notes").value, "Game Notes");
+    });
+  }
 
   document.getElementById("btn-copy-tp-password").addEventListener("click", () => {
     const pass = document.getElementById("tp-password").value;
