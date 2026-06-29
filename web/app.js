@@ -541,6 +541,13 @@ function handleActivateCDKey() {
   });
 }
 
+// Helper to automatically close the modal after successful activation
+function autoCloseActivationModal() {
+  setTimeout(() => {
+    document.getElementById("details-modal").classList.add("hidden");
+  }, 1500);
+}
+
 // Helper to update visual subscription activation state across the UI
 function updateActivationUI(isActive, planName = null, cdKey = null) {
   const bannerBadge = document.getElementById("banner-status-badge");
