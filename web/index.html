@@ -1,273 +1,273 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Suga Game Store</title>
-  <link rel="icon" href="data:,">
-  <!-- Google Fonts: Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suga Game Store</title>
+    <link rel="icon" href="data:,">
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="app-container">
 
-  <!-- Custom Title Bar -->
-  <header class="title-bar">
-    <div class="title-bar-left">
-      <!-- Dynamic Favicon Logo -->
-      <img src="favicon.ico" width="24" height="24" style="object-fit: contain;">
-      <span class="brand-text">SUGA</span>
-      <span class="window-title">Suga Game Store</span>
-    </div>
-    <div class="window-controls">
-      <button class="win-btn" id="win-min" title="Minimize">
-        <svg viewBox="0 0 10 1" width="10" height="1"><line x1="0" y1="0.5" x2="10" y2="0.5" stroke="#64748B" stroke-width="1.5"/></svg>
-      </button>
-      <button class="win-btn" id="win-max" title="Maximize">
-        <svg viewBox="0 0 10 10" width="10" height="10"><rect x="1" y="1" width="8" height="8" fill="none" stroke="#64748B" stroke-width="1.5"/></svg>
-      </button>
-      <button class="win-btn win-close" id="win-close" title="Close">
-        <svg viewBox="0 0 10 10" width="10" height="10"><path d="M 1 1 L 9 9 M 9 1 L 1 9" stroke="#64748B" stroke-width="1.5"/></svg>
-      </button>
-    </div>
-  </header>
-
-  <!-- Status Bar Container / Membership Banner -->
-  <div class="status-banner">
-    <div class="status-banner-left">
-      <span class="badge inactive-badge" id="banner-status-badge">INACTIVE</span>
-      <span class="plan-text" id="banner-plan-text">Plan: Not Activate Yet</span>
-    </div>
-    <div class="status-banner-right">
-      <button class="btn-secondary" id="btn-show-details">Show Details</button>
-    </div>
-  </div>
-
-  <!-- Main Panel Layout -->
-  <main class="main-layout">
-    
-    <!-- LEFT PANEL: Library & Browser (65% Width) -->
-    <section class="left-panel">
-      <!-- Search Utility Bar -->
-      <div class="search-bar-container">
-        <div class="search-input-wrapper">
-          <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16">
-            <circle cx="11" cy="11" r="7" stroke="#64748B" stroke-width="2.5" fill="none"/>
-            <line x1="16" y1="16" x2="21" y2="21" stroke="#64748B" stroke-width="2.5" stroke-linecap="round"/>
-          </svg>
-          <input type="text" class="input-field" id="search-input" placeholder="Search by game name or AppID...">
+    <!-- Custom Title Bar -->
+    <header class="title-bar">
+        <div class="title-bar-left">
+            <!-- Dynamic Favicon Logo -->
+            <img src="favicon.ico" width="24" height="24" style="object-fit: contain;">
+            <span class="brand-text">SUGA</span>
+            <span class="window-title">Suga Game Store</span>
         </div>
-        <div class="search-buttons">
-          <button class="btn-secondary btn-control" id="btn-clear">Clear</button>
-          <button class="btn-secondary btn-control" id="btn-online">Online</button>
-          <button class="btn-secondary btn-control" id="btn-refresh" title="Refresh library data">
-            <svg class="refresh-icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      <!-- Game Display Grid -->
-      <div class="game-grid" id="game-grid">
-        <!-- Loaded dynamically from app.js -->
-      </div>
-
-      <!-- Pagination Footer -->
-      <footer class="pagination-footer">
-        <button class="page-arrow" id="btn-prev-page" title="Previous Page">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-        <span class="pagination-indicator" id="page-indicator">Page 1 / 18</span>
-        <button class="page-arrow" id="btn-next-page" title="Next Page">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 18 15 12 9 6"></polyline>
-          </svg>
-        </button>
-      </footer>
-    </section>
-
-    <!-- RIGHT PANEL: Action & Authentication Sidebar (35% Width) -->
-    <aside class="right-panel">
-      
-      <!-- Top Status / Game Detail Window -->
-      <div class="game-detail-box" id="game-detail-box">
-        <div class="empty-detail-state" id="empty-detail-state">
-          <svg class="placeholder-icon" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#2e3b52" stroke-width="1.5">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
-          <p>Please select a game to show details</p>
-        </div>
-        <div class="active-detail-state hidden" id="active-detail-state">
-          <div class="detail-header-row">
-            <div class="detail-cover-wrapper">
-              <div class="detail-cover-gradient" id="detail-cover-gradient"></div>
-              <span class="detail-online-badge hidden" id="detail-online-badge">ONLINE</span>
-            </div>
-            <div class="detail-info">
-              <h2 class="detail-game-title" id="detail-game-title">Game Title</h2>
-              <span class="detail-appid" id="detail-game-appid">AppID: ------</span>
-            </div>
-          </div>
-          <!-- Steam Profile Auto-Detect -->
-          <div class="steam-profile-row" id="steam-profile-row" style="display: flex; align-items: center; justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <img class="steam-avatar" id="steam-avatar" src="" alt="Avatar" />
-              <div class="steam-profile-info">
-                <span class="steam-persona" id="steam-persona">Detecting...</span>
-                <span class="steam-id-text" id="steam-id-text">SteamID: ---</span>
-              </div>
-            </div>
-            <button class="btn-secondary" id="btn-switch-account" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; border-color: #3b82f6; color: #60a5fa; background: rgba(59, 130, 246, 0.1);">Switch Account</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Steam Interface Controller -->
-      <div class="interface-section disabled-section" id="steam-controller">
-        <h3 class="section-title">Steam Interface Controller</h3>
-        
-        <!-- Username Input Field -->
-        <div class="input-copy-group">
-          <input type="text" class="input-field disabled-input" id="steam-username" placeholder="Select game for Username" readonly>
-          <button class="btn-copy" id="btn-copy-username" title="Copy Username">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Action Buttons Row -->
-        <div class="button-row">
-          <button class="btn-secondary" id="btn-login-steam">Login to Steam</button>
-          <button class="btn-primary" id="btn-fetch-guard">Fetch Steam Guard Code</button>
-        </div>
-
-
-        <!-- Slot Indicators / Horizontal Dashes -->
-        <div class="slot-indicator-wrapper">
-          <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-right: 8px; white-space: nowrap;">Guard Code:</span>
-          <div class="slot-dashes" id="slot-dashes">------</div>
-          <button class="btn-copy" id="btn-copy-dashes" title="Copy Steam Guard Code">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Third-Party Integrations Form -->
-      <div class="interface-section disabled-section" id="third-party-section">
-        <div class="section-header" id="third-party-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
-          <h3 class="section-title text-small" style="margin: 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">3rd Party Launcher Login</h3>
-          <span class="toggle-arrow" id="third-party-arrow" style="font-size: 10px; transition: transform 0.2s; color: var(--text-muted);">▶</span>
-        </div>
-        
-        <div id="third-party-content" style="display: none; flex-direction: column; gap: 12px; margin-top: 4px;">
-          <div class="form-group">
-            <label class="form-label">Platform</label>
-            <input type="text" class="input-field disabled-input" id="tp-platform" placeholder="e.g. Steam / Epic" readonly>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" id="lbl-tp-username">Username</label>
-            <div class="input-copy-group">
-              <input type="text" class="input-field disabled-input" id="tp-username" placeholder="Username" readonly>
-              <button class="btn-copy" id="btn-copy-tp-username" title="Copy Username">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" id="lbl-tp-password">Password</label>
-            <div class="input-copy-group">
-              <input type="password" class="input-field disabled-input" id="tp-password" placeholder="Password" style="padding-right: 76px;" readonly>
-              <button class="btn-copy" id="btn-toggle-tp-password" title="Show Password" style="right: 36px;">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="tp-eye-icon">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </button>
-              <button class="btn-copy" id="btn-copy-tp-password" title="Copy Password">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </aside>
-
-  </main>
-
-  <!-- Membership Detail Modal (Show Details Button Trigger) -->
-  <div class="modal-overlay hidden" id="details-modal">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3>Membership Subscription Details</h3>
-        <button class="btn-close-modal" id="btn-close-modal">
-          <svg viewBox="0 0 10 10" width="12" height="12"><path d="M 1 1 L 9 9 M 9 1 L 1 9" stroke="#ffffff" stroke-width="1.8"/></svg>
-        </button>
-      </div>
-      <div class="modal-content">
-        <div class="detail-row">
-          <span class="lbl">Account Status:</span>
-          <span class="val text-glow-blue" id="modal-status-val">Not Activate Yet</span>
-        </div>
-        <div class="detail-row" style="align-items: center;">
-          <span class="lbl">Select SteamID:</span>
-          <select class="val" id="modal-steamid-select" style="background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 6px 12px; outline: none; font-size: 12px; font-weight: 600; width: 220px; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;">
-            <!-- Populated dynamically -->
-          </select>
-          <span id="modal-plan-val" class="hidden">Not Activate Yet</span>
-        </div>
-        <div class="detail-row hidden">
-          <span class="lbl">Hardware ID (HWID):</span>
-          <span class="val flex-val">
-            <span id="hwid-value" class="text-glow-blue">Retrieving...</span>
-            <button class="btn-copy-inline" id="btn-copy-hwid" title="Copy HWID">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
+        <div class="window-controls">
+            <button class="win-btn" id="win-min" title="Minimize">
+                <svg viewBox="0 0 10 1" width="10" height="1"><line x1="0" y1="0.5" x2="10" y2="0.5" stroke="#64748B" stroke-width="1.5" /></svg>
             </button>
-          </span>
+            <button class="win-btn" id="win-max" title="Maximize">
+                <svg viewBox="0 0 10 10" width="10" height="10"><rect x="1" y="1" width="8" height="8" fill="none" stroke="#64748B" stroke-width="1.5" /></svg>
+            </button>
+            <button class="win-btn win-close" id="win-close" title="Close">
+                <svg viewBox="0 0 10 10" width="10" height="10"><path d="M 1 1 L 9 9 M 9 1 L 1 9" stroke="#64748B" stroke-width="1.5" /></svg>
+            </button>
         </div>
-        <p class="modal-note">This account automatically checks for Steam Guard authorization codes using direct encrypted IMAP TLS protocols to prevent network interception.</p>
+    </header>
 
-        <!-- CD Key Activation -->
-        <div class="cdkey-section">
-          <h4 class="cdkey-title">Activate CD Key</h4>
-          <input type="text" class="input-field cdkey-input" id="cdkey-input" placeholder="xxxx-xxxx-xxxx-xxxx-xxxx-xxxxxxxx" maxlength="34">
-          <div class="cdkey-button-row">
-            <button class="btn-primary cdkey-btn" id="btn-activate-cdkey">Activate</button>
-          </div>
-          <button class="btn-secondary cdkey-btn" id="btn-reset-activation" style="margin-top: 10px; width: 100%; border: 1px solid #dc2626; color: #ef4444; background: rgba(220, 38, 38, 0.05); font-weight: 600;">Reset Activation</button>
-          <span class="cdkey-status" id="cdkey-status"></span>
+    <!-- Status Bar Container / Membership Banner -->
+    <div class="status-banner">
+        <div class="status-banner-left">
+            <span class="badge inactive-badge" id="banner-status-badge">INACTIVE</span>
+            <span class="plan-text" id="banner-plan-text">Plan: Not Activate Yet</span>
         </div>
-      </div>
+        <div class="status-banner-right">
+            <button class="btn-secondary" id="btn-show-details">Show Details</button>
+        </div>
     </div>
-  </div>
 
-  <!-- Notification Toast -->
-  <div class="toast-container" id="toast-container"></div>
+    <!-- Main Panel Layout -->
+    <main class="main-layout">
 
-  <script src="app.js"></script>
+        <!-- LEFT PANEL: Library & Browser (65% Width) -->
+        <section class="left-panel">
+            <!-- Search Utility Bar -->
+            <div class="search-bar-container">
+                <div class="search-input-wrapper">
+                    <svg class="search-icon" viewBox="0 0 24 24" width="16" height="16">
+                        <circle cx="11" cy="11" r="7" stroke="#64748B" stroke-width="2.5" fill="none" />
+                        <line x1="16" y1="16" x2="21" y2="21" stroke="#64748B" stroke-width="2.5" stroke-linecap="round" />
+                    </svg>
+                    <input type="text" class="input-field" id="search-input" placeholder="Search by game name or AppID...">
+                </div>
+                <div class="search-buttons">
+                    <button class="btn-secondary btn-control" id="btn-clear">Clear</button>
+                    <button class="btn-secondary btn-control" id="btn-online">Online</button>
+                    <button class="btn-secondary btn-control" id="btn-refresh" title="Refresh library data">
+                        <svg class="refresh-icon-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l.73-.73" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game Display Grid -->
+            <div class="game-grid" id="game-grid">
+                <!-- Loaded dynamically from app.js -->
+            </div>
+
+            <!-- Pagination Footer -->
+            <footer class="pagination-footer">
+                <button class="page-arrow" id="btn-prev-page" title="Previous Page">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <span class="pagination-indicator" id="page-indicator">Page 1 / 18</span>
+                <button class="page-arrow" id="btn-next-page" title="Next Page">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </footer>
+        </section>
+
+        <!-- RIGHT PANEL: Action & Authentication Sidebar (35% Width) -->
+        <aside class="right-panel">
+
+            <!-- Top Status / Game Detail Window -->
+            <div class="game-detail-box" id="game-detail-box">
+                <div class="empty-detail-state" id="empty-detail-state">
+                    <svg class="placeholder-icon" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="#2e3b52" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                    <p>Please select a game to show details</p>
+                </div>
+                <div class="active-detail-state hidden" id="active-detail-state">
+                    <div class="detail-header-row">
+                        <div class="detail-cover-wrapper">
+                            <div class="detail-cover-gradient" id="detail-cover-gradient"></div>
+                            <span class="detail-online-badge hidden" id="detail-online-badge">ONLINE</span>
+                        </div>
+                        <div class="detail-info">
+                            <h2 class="detail-game-title" id="detail-game-title">Game Title</h2>
+                            <span class="detail-appid" id="detail-game-appid">AppID: ------</span>
+                        </div>
+                    </div>
+                    <!-- Steam Profile Auto-Detect -->
+                    <div class="steam-profile-row" id="steam-profile-row" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <img class="steam-avatar" id="steam-avatar" src="" alt="Avatar" />
+                            <div class="steam-profile-info">
+                                <span class="steam-persona" id="steam-persona">Detecting...</span>
+                                <span class="steam-id-text" id="steam-id-text">SteamID: ---</span>
+                            </div>
+                        </div>
+                        <button class="btn-secondary" id="btn-switch-account" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; border-color: #3b82f6; color: #60a5fa; background: rgba(59, 130, 246, 0.1);">Switch Account</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Steam Interface Controller -->
+            <div class="interface-section disabled-section" id="steam-controller">
+                <h3 class="section-title">Steam Interface Controller</h3>
+
+                <!-- Username Input Field -->
+                <div class="input-copy-group">
+                    <input type="text" class="input-field disabled-input" id="steam-username" placeholder="Select game for Username" readonly>
+                    <button class="btn-copy" id="btn-copy-username" title="Copy Username">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Action Buttons Row -->
+                <div class="button-row">
+                    <button class="btn-secondary" id="btn-login-steam">Login to Steam</button>
+                    <button class="btn-primary" id="btn-fetch-guard">Fetch Steam Guard Code</button>
+                </div>
+
+
+                <!-- Slot Indicators / Horizontal Dashes -->
+                <div class="slot-indicator-wrapper">
+                    <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-right: 8px; white-space: nowrap;">Guard Code:</span>
+                    <div class="slot-dashes" id="slot-dashes">------</div>
+                    <button class="btn-copy" id="btn-copy-dashes" title="Copy Steam Guard Code">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Third-Party Integrations Form -->
+            <div class="interface-section disabled-section" id="third-party-section">
+                <div class="section-header" id="third-party-header" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none;">
+                    <h3 class="section-title text-small" style="margin: 0; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">3rd Party Launcher Login</h3>
+                    <span class="toggle-arrow" id="third-party-arrow" style="font-size: 10px; transition: transform 0.2s; color: var(--text-muted); transform: rotate(90deg);">▶</span>
+                </div>
+
+                <div id="third-party-content" style="display: flex; flex-direction: column; gap: 12px; margin-top: 4px;">
+                    <div class="form-group">
+                        <label class="form-label">Platform</label>
+                        <input type="text" class="input-field disabled-input" id="tp-platform" placeholder="e.g. Steam / Epic" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" id="lbl-tp-username">Username</label>
+                        <div class="input-copy-group">
+                            <input type="text" class="input-field disabled-input" id="tp-username" placeholder="Username" readonly>
+                            <button class="btn-copy" id="btn-copy-tp-username" title="Copy Username">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" id="lbl-tp-password">Password</label>
+                        <div class="input-copy-group">
+                            <input type="password" class="input-field disabled-input" id="tp-password" placeholder="Password" style="padding-right: 76px;" readonly>
+                            <button class="btn-copy" id="btn-toggle-tp-password" title="Show Password" style="right: 36px;">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="tp-eye-icon">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                            <button class="btn-copy" id="btn-copy-tp-password" title="Copy Password">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- Membership Detail Modal (Show Details Button Trigger) -->
+    <div class="modal-overlay hidden" id="details-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3>Membership Subscription Details</h3>
+                <button class="btn-close-modal" id="btn-close-modal">
+                    <svg viewBox="0 0 10 10" width="12" height="12"><path d="M 1 1 L 9 9 M 9 1 L 1 9" stroke="#ffffff" stroke-width="1.8" /></svg>
+                </button>
+            </div>
+            <div class="modal-content">
+                <div class="detail-row">
+                    <span class="lbl">Account Status:</span>
+                    <span class="val text-glow-blue" id="modal-status-val">Not Activate Yet</span>
+                </div>
+                <div class="detail-row" style="align-items: center;">
+                    <span class="lbl">Select SteamID:</span>
+                    <select class="val" id="modal-steamid-select" style="background-color: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); border-radius: var(--border-radius-sm); padding: 6px 12px; outline: none; font-size: 12px; font-weight: 600; width: 220px; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;">
+                        <!-- Populated dynamically -->
+                    </select>
+                    <span id="modal-plan-val" class="hidden">Not Activate Yet</span>
+                </div>
+                <div class="detail-row hidden">
+                    <span class="lbl">Hardware ID (HWID):</span>
+                    <span class="val flex-val">
+                        <span id="hwid-value" class="text-glow-blue">Retrieving...</span>
+                        <button class="btn-copy-inline" id="btn-copy-hwid" title="Copy HWID">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
+                    </span>
+                </div>
+                <p class="modal-note">This account automatically checks for Steam Guard authorization codes using direct encrypted IMAP TLS protocols to prevent network interception.</p>
+
+                <!-- CD Key Activation -->
+                <div class="cdkey-section">
+                    <h4 class="cdkey-title">Activate CD Key</h4>
+                    <input type="text" class="input-field cdkey-input" id="cdkey-input" placeholder="xxxx-xxxx-xxxx-xxxx-xxxx-xxxxxxxx" maxlength="34">
+                    <div class="cdkey-button-row">
+                        <button class="btn-primary cdkey-btn" id="btn-activate-cdkey">Activate</button>
+                    </div>
+                    <button class="btn-secondary cdkey-btn" id="btn-reset-activation" style="margin-top: 10px; width: 100%; border: 1px solid #dc2626; color: #ef4444; background: rgba(220, 38, 38, 0.05); font-weight: 600;">Reset Activation</button>
+                    <span class="cdkey-status" id="cdkey-status"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="app.js"></script>
 </body>
 </html>

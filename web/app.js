@@ -189,9 +189,8 @@ function selectGame(game) {
   const lblTpPassword = document.getElementById("lbl-tp-password");
 
   if (platform === "Steam" || platform === "None" || platform === "") {
-    tpSection.classList.add("disabled-section");
-    tpContent.style.display = "none";
-    if (tpArrow) tpArrow.style.transform = "rotate(0deg)";
+    tpContent.style.display = "flex";
+    if (tpArrow) tpArrow.style.transform = "rotate(90deg)";
     
     tpPlatformInput.value = "Steam";
     tpUsernameInput.value = game.username;
