@@ -8,6 +8,7 @@ let onlineFilter = false;
 let cachedHWID = null;
 let selectedSteamID = null;
 let steamAccounts = [];
+let currentPlan = null;  // activated plan, e.g. 'LIFETIME', '1YEAR', 'STANDARD'
 
 
 // Color cover gradients based on the title to look unique and pretty as a fallback
@@ -164,6 +165,9 @@ function selectGame(game) {
     badge.classList.add("hidden");
   }
 
+  // Enforce online-game plan ruleset on the action buttons
+  applyOnlineLockToSelected();
+
   // Populate Steam Inputs
   document.getElementById("steam-username").value = game.username;
   document.getElementById("steam-username").classList.remove("disabled-input");
@@ -183,19 +187,17 @@ function selectGame(game) {
   const tpArrow = document.getElementById("third-party-arrow");
   const lblTpUsername = document.getElementById("lbl-tp-username");
   const lblTpPassword = document.getElementById("lbl-tp-password");
+  const tpNotesInput = document.getElementById("tp-notes");
+  const lblTpNotes = document.getElementById("lbl-tp-notes");
 
   if (platform === "Steam" || platform === "None" || platform === "") {
-    tpSection.classList.add("disabled-section");
-    tpContent.style.display = "none";
-    if (tpArrow) tpArrow.style.transform = "rotate(0deg)";
-    
-    tpPlatformInput.value = "Steam";
-    tpUsernameInput.value = game.username;
+    // Pure Steam game: no separate launcher. The Steam login is shown ONLY in
+    // the main Steam Interface Controller above, never duplicated here.
+    tpSection.style.display = "none";
+    tpUsernameInput.value = "";
     tpPasswordInput.value = "";
-    
-    lblTpUsername.innerText = "Username";
-    lblTpPassword.innerText = "Password";
   } else {
+    tpSection.style.display = "flex";
     tpSection.classList.remove("disabled-section");
     tpContent.style.display = "flex";
     if (tpArrow) tpArrow.style.transform = "rotate(90deg)";
@@ -217,6 +219,18 @@ function selectGame(game) {
   }
 
   showToast(`Selected: ${game.name}`, 'info');
+
+  // Global Notes
+  const globalNote = game.note || game.notes || "";
+  const notesSection = document.getElementById("game-notes-section");
+  if (globalNote) {
+    notesSection.style.display = "block";
+    notesSection.classList.remove("disabled-section");
+    document.getElementById("global-game-notes").value = globalNote;
+  } else {
+    notesSection.style.display = "none";
+    document.getElementById("global-game-notes").value = "";
+  }
 
   // Auto-detect Steam profile
   fetchSteamProfile();
@@ -309,6 +323,11 @@ function applyFilters() {
 function handleFetchSteamGuard() {
   if (!selectedGame) return;
 
+  if (selectedGame.online && !isOnlineAllowed()) {
+    showToast("Online games require a 1 Year or Lifetime plan.", 'error');
+    return;
+  }
+
   const btn = document.getElementById("btn-fetch-guard");
   const prevText = btn.innerText;
   
@@ -317,11 +336,14 @@ function handleFetchSteamGuard() {
 
   showToast("Establishing TLS Connection...", 'info');
 
-  const fetchGuardPromise = (window.pywebview && window.pywebview.api && window.pywebview.api.fetch_steam_guard)
-    ? window.pywebview.api.fetch_steam_guard(selectedGame.username)
-    : mockFetchSteamGuard(selectedGame.username);
+  if (!(window.pywebview && window.pywebview.api && window.pywebview.api.fetch_steam_guard)) {
+    btn.innerText = prevText;
+    btn.disabled = false;
+    showToast("Steam Guard fetch unavailable: backend not connected", 'error');
+    return;
+  }
 
-  fetchGuardPromise.then(result => {
+  window.pywebview.api.fetch_steam_guard(selectedGame.username).then(result => {
     btn.innerText = prevText;
     btn.disabled = false;
 
@@ -342,38 +364,50 @@ window.onSteamGuardFetched = function(code) {
   const dashes = document.getElementById("slot-dashes");
   dashes.innerText = code;
   dashes.classList.add("active");
-  
+
   showToast(`Steam Guard Code Fetched: ${code}`, 'success');
   copyToClipboard(code, "Steam Guard Code");
-  
+
   // Alert the user about auto-fill typing
   showToast("Auto-typing Code. Please click the Steam Code input field NOW!", "info");
 };
 
-// Simulated Steam Guard fetcher for preview
-function mockFetchSteamGuard(username) {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const mockCode = Array.from({length: 5}, () => 
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".charAt(Math.floor(Math.random() * 36))
-      ).join("");
-      
-      resolve({
-        success: true,
-        code: mockCode
-      });
-    }, 2000);
-  });
+// Ruleset: ONLINE games require a 1 Year or Lifetime plan
+function isOnlineAllowed() {
+  const p = (currentPlan || '').toUpperCase();
+  return p === '1YEAR' || p === 'LIFETIME';
+}
+
+// Lock/unlock the launch + guard buttons based on the selected game's online tag and plan
+function applyOnlineLockToSelected() {
+  const loginBtn = document.getElementById("btn-login-steam");
+  const guardBtn = document.getElementById("btn-fetch-guard");
+  const locked = !!(selectedGame && selectedGame.online && !isOnlineAllowed());
+  if (loginBtn) {
+    loginBtn.disabled = locked;
+    loginBtn.classList.toggle("disabled-input", locked);
+    loginBtn.title = locked ? "Online games require a 1 Year or Lifetime plan" : "";
+  }
+  if (guardBtn) {
+    guardBtn.disabled = locked;
+    guardBtn.classList.toggle("disabled-input", locked);
+  }
+  return locked;
 }
 
 // Trigger Steam Auto-Login via Python subprocess launcher
 function handleSteamLogin() {
   if (!selectedGame) return;
 
+  if (selectedGame.online && !isOnlineAllowed()) {
+    showToast("Online games require a 1 Year or Lifetime plan.", 'error');
+    return;
+  }
+
   showToast("Auto-Login: Launching Steam Client...", 'info');
 
   if (window.pywebview && window.pywebview.api && window.pywebview.api.launch_steam) {
-    window.pywebview.api.launch_steam(selectedGame.username).then(res => {
+    window.pywebview.api.launch_steam(selectedGame.username, !!selectedGame.online).then(res => {
       if (res.success) {
         showToast("Steam Client launching. Fetching Guard Code in background...", 'success');
       } else {
@@ -381,14 +415,7 @@ function handleSteamLogin() {
       }
     });
   } else {
-    // Web Preview Simulation
-    setTimeout(() => {
-      showToast("Simulation: Steam Launched with credentials. Connecting Gmail...", 'success');
-      setTimeout(() => {
-        const mockCode = "X77TH";
-        onSteamGuardFetched(mockCode);
-      }, 3000);
-    }, 1000);
+    showToast("Cannot launch Steam: backend not connected", 'error');
   }
 }
 
@@ -404,33 +431,45 @@ function fetchSteamProfile() {
   idEl.innerText = "SteamID: ---";
   avatarEl.src = "";
 
-  if (window.pywebview && window.pywebview.api && window.pywebview.api.get_steam_profile) {
-    window.pywebview.api.get_steam_profile().then(profile => {
-      if (profile && profile.steamid && profile.steamid !== "UNKNOWN") {
-        personaEl.innerText = profile.persona_name || "Steam User";
-        idEl.innerText = `SteamID: ${profile.steamid}`;
-        if (profile.avatar_url) {
-          avatarEl.src = profile.avatar_url;
-          avatarEl.style.display = "block";
+  if (window.pywebview && window.pywebview.api) {
+    if (selectedSteamID && selectedSteamID !== "UNKNOWN" && window.pywebview.api.get_steam_profile_by_id) {
+      window.pywebview.api.get_steam_profile_by_id(selectedSteamID).then(profile => {
+        if (profile && profile.steamid && profile.steamid !== "UNKNOWN") {
+          personaEl.innerText = profile.persona_name || "Steam User";
+          idEl.innerText = `SteamID: ${profile.steamid}`;
+          if (profile.avatar_url) {
+            avatarEl.src = profile.avatar_url;
+            avatarEl.style.display = "block";
+          }
         }
         checkActivationStatusSilently();
-      } else {
-        personaEl.innerText = "Not logged in";
-        idEl.innerText = "SteamID: Not detected";
-        updateActivationUI(false);
-      }
-    }).catch(() => {
-      personaEl.innerText = "Error";
-      idEl.innerText = "SteamID: Error";
-      updateActivationUI(false);
-    });
+      }).catch(() => {
+        personaEl.innerText = "Error";
+        idEl.innerText = "SteamID: Error";
+      });
+    } else if (window.pywebview.api.get_steam_profile) {
+      window.pywebview.api.get_steam_profile().then(profile => {
+        if (profile && profile.steamid && profile.steamid !== "UNKNOWN") {
+          personaEl.innerText = profile.persona_name || "Steam User";
+          idEl.innerText = `SteamID: ${profile.steamid}`;
+          if (profile.avatar_url) {
+            avatarEl.src = profile.avatar_url;
+            avatarEl.style.display = "block";
+          }
+        } else {
+          personaEl.innerText = "Not logged in";
+          idEl.innerText = "SteamID: Not detected";
+        }
+        checkActivationStatusSilently();
+      }).catch(() => {
+        personaEl.innerText = "Error";
+        idEl.innerText = "SteamID: Error";
+      });
+    }
   } else {
-    // Web Preview
-    setTimeout(() => {
-      personaEl.innerText = "SugaGamer";
-      idEl.innerText = "SteamID: 76561198000000000";
-      updateActivationUI(true, 'Standard');
-    }, 500);
+    console.error("displayProfile: pywebview API not available");
+    personaEl.innerText = "Not detected";
+    idEl.innerText = "SteamID: Not detected";
   }
 }
 
@@ -440,7 +479,7 @@ function handleActivateCDKey() {
   const status = document.getElementById("cdkey-status");
   if (!input || !status) return;
 
-  const cdKey = input.value.trim();
+  const cdKey = input.value.trim().toLowerCase();
   if (!cdKey) {
     status.innerText = "Please enter a CD Key.";
     status.className = "cdkey-status error";
@@ -470,8 +509,8 @@ function handleActivateCDKey() {
           status.innerText = result.message;
           status.className = "cdkey-status success";
           showToast(result.message, 'success');
-          input.value = "";
-          updateActivationUI(true, result.activation_type || 'Standard');
+          updateActivationUI(true, result.activation_type || 'Standard', result.cd_key || cdKey);
+          autoCloseActivationModal();
         } else {
           status.innerText = result.message;
           status.className = "cdkey-status error";
@@ -482,69 +521,22 @@ function handleActivateCDKey() {
         status.className = "cdkey-status error";
       });
     } else {
-      // Web Preview
-      setTimeout(() => {
-        status.innerText = "CD Key validated! (Preview Mode)";
-        status.className = "cdkey-status success";
-        showToast("CD Key activated successfully. (Preview Mode)", 'success');
-        input.value = "";
-        updateActivationUI(true, 'Standard');
-      }, 1000);
+      status.innerText = "Cannot validate: backend not connected.";
+      status.className = "cdkey-status error";
+      showToast("Cannot validate CD Key: backend not connected", 'error');
     }
   });
 }
 
-// Handle Existing User - check server using selected/active SteamID
-function handleExistingUser() {
-  const status = document.getElementById("cdkey-status");
-  const btn = document.getElementById("btn-existing-user");
-  if (!status || !btn) return;
-
-  const prevText = btn.innerText;
-  btn.innerText = "Checking...";
-  btn.disabled = true;
-  status.innerText = "";
-  status.className = "cdkey-status";
-
-  const currentId = selectedSteamID || null;
-  if (window.pywebview && window.pywebview.api && window.pywebview.api.check_existing_user) {
-    window.pywebview.api.check_existing_user(currentId).then(result => {
-      btn.innerText = prevText;
-      btn.disabled = false;
-
-      if (result.status === 'success') {
-        status.innerText = result.message;
-        status.className = "cdkey-status success";
-        showToast(result.message, 'success');
-        updateActivationUI(true, result.activation_type || 'Standard');
-      } else {
-        status.innerText = result.message;
-        status.className = "cdkey-status error";
-        showToast(result.message, 'error');
-        updateActivationUI(false);
-      }
-    }).catch(err => {
-      btn.innerText = prevText;
-      btn.disabled = false;
-      status.innerText = "Something went wrong. Please try again.";
-      status.className = "cdkey-status error";
-      updateActivationUI(false);
-    });
-  } else {
-    // Web Preview
-    setTimeout(() => {
-      btn.innerText = prevText;
-      btn.disabled = false;
-      status.innerText = "Account found & activated! (Preview Mode)";
-      status.className = "cdkey-status success";
-      showToast("Existing user validated! (Preview Mode)", 'success');
-      updateActivationUI(true, 'Standard');
-    }, 1500);
-  }
+// Helper to automatically close the modal after successful activation
+function autoCloseActivationModal() {
+  setTimeout(() => {
+    document.getElementById("details-modal").classList.add("hidden");
+  }, 1500);
 }
 
 // Helper to update visual subscription activation state across the UI
-function updateActivationUI(isActive, planName = null) {
+function updateActivationUI(isActive, planName = null, cdKey = null) {
   const bannerBadge = document.getElementById("banner-status-badge");
   const bannerPlan = document.getElementById("banner-plan-text");
   const modalStatus = document.getElementById("modal-status-val");
@@ -555,6 +547,8 @@ function updateActivationUI(isActive, planName = null) {
   const btnSearch = document.getElementById("search-input");
   const detailsModal = document.getElementById("details-modal");
   const btnCloseModal = document.getElementById("btn-close-modal");
+  const cdkeyInput = document.getElementById("cdkey-input");
+  const btnActivate = document.getElementById("btn-activate-cdkey");
 
   if (isActive) {
     if (bannerBadge) {
@@ -564,6 +558,7 @@ function updateActivationUI(isActive, planName = null) {
     if (bannerPlan) {
       bannerPlan.innerText = `Plan: ${planName || 'membership'}`;
     }
+    currentPlan = planName || null;
     if (modalStatus) {
       modalStatus.innerText = "ACTIVE";
       modalStatus.style.color = "var(--accent-glow)";
@@ -571,11 +566,19 @@ function updateActivationUI(isActive, planName = null) {
     if (modalPlan) {
       modalPlan.innerText = planName || "Standard";
     }
-    
+
     if (btnDownload) btnDownload.disabled = false;
     if (btnRefresh) btnRefresh.disabled = false;
     if (btnSearch) btnSearch.disabled = false;
     if (btnCloseModal) btnCloseModal.style.display = "block";
+
+    // Activated: show the key, grey out the field and activation buttons
+    if (cdkeyInput) {
+      if (cdKey) cdkeyInput.value = cdKey;
+      cdkeyInput.readOnly = true;
+      cdkeyInput.classList.add("disabled-input");
+    }
+    if (btnActivate) { btnActivate.disabled = true; btnActivate.classList.add("disabled-input"); }
   } else {
     if (bannerBadge) {
       bannerBadge.innerText = "INACTIVE";
@@ -584,6 +587,7 @@ function updateActivationUI(isActive, planName = null) {
     if (bannerPlan) {
       bannerPlan.innerText = "Plan: Not Activate Yet";
     }
+    currentPlan = null;
     if (modalStatus) {
       modalStatus.innerText = "Not Activate Yet";
       modalStatus.style.color = "#ef4444";
@@ -595,10 +599,21 @@ function updateActivationUI(isActive, planName = null) {
     if (btnDownload) btnDownload.disabled = true;
     if (btnRefresh) btnRefresh.disabled = true;
     if (btnSearch) btnSearch.disabled = true;
-    
+
     if (detailsModal) detailsModal.classList.remove("hidden");
     if (btnCloseModal) btnCloseModal.style.display = "none";
+
+    // Not activated: restore the field and activation buttons
+    if (cdkeyInput) {
+      cdkeyInput.value = "";
+      cdkeyInput.readOnly = false;
+      cdkeyInput.classList.remove("disabled-input");
+    }
+    if (btnActivate) { btnActivate.disabled = false; btnActivate.classList.remove("disabled-input"); }
   }
+
+  // Re-evaluate online-game lock now that the plan may have changed
+  applyOnlineLockToSelected();
 }
 
 // Silently checks activation on the server in the background
@@ -607,7 +622,7 @@ function checkActivationStatusSilently() {
   if (window.pywebview && window.pywebview.api && window.pywebview.api.check_existing_user) {
     window.pywebview.api.check_existing_user(currentId).then(result => {
       if (result && result.status === 'success') {
-        updateActivationUI(true, result.activation_type || 'Standard');
+        updateActivationUI(true, result.activation_type || 'Standard', result.cd_key);
       } else {
         updateActivationUI(false);
       }
@@ -654,15 +669,11 @@ function handleResetActivation() {
       status.className = "cdkey-status error";
     });
   } else {
-    // Web Preview
-    setTimeout(() => {
-      btn.innerText = prevText;
-      btn.disabled = false;
-      status.innerText = "Activation reset! (Preview Mode)";
-      status.className = "cdkey-status success";
-      showToast("Activation reset successfully! (Preview Mode)", 'success');
-      updateActivationUI(false);
-    }, 1000);
+    btn.innerText = prevText;
+    btn.disabled = false;
+    status.innerText = "Cannot reset: backend not connected.";
+    status.className = "cdkey-status error";
+    showToast("Cannot reset activation: backend not connected", 'error');
   }
 }
 
@@ -675,10 +686,7 @@ function populateSteamIDDropdown() {
 
   const fetchPromise = (window.pywebview && window.pywebview.api && window.pywebview.api.get_all_steam_ids)
     ? window.pywebview.api.get_all_steam_ids()
-    : Promise.resolve([
-        { steamid: "76561198000000001", persona_name: "GamerPro" },
-        { steamid: "76561198000000002", persona_name: "SugaGamer" }
-      ]);
+    : Promise.resolve([]);
 
   return fetchPromise.then(accounts => {
     steamAccounts = accounts || [];
@@ -689,7 +697,7 @@ function populateSteamIDDropdown() {
         option.innerText = `${acc.persona_name} (${acc.steamid})`;
         selectEl.appendChild(option);
       });
-      
+
       if (selectedSteamID) {
         selectEl.value = selectedSteamID;
       } else {
@@ -725,36 +733,19 @@ function populateSteamIDDropdown() {
 function fetchHWID() {
   const hwidValEl = document.getElementById("hwid-value");
   if (!hwidValEl) return;
-  
+
   hwidValEl.innerText = "Retrieving...";
-  
-  console.log("fetchHWID: starting...");
-  console.log("fetchHWID: window.pywebview =", window.pywebview);
-  if (window.pywebview) {
-    console.log("fetchHWID: window.pywebview.api =", window.pywebview.api);
-    if (window.pywebview.api) {
-      console.log("fetchHWID: window.pywebview.api.get_hwid =", window.pywebview.api.get_hwid);
-    }
-  }
 
   if (window.pywebview && window.pywebview.api && window.pywebview.api.get_hwid) {
     window.pywebview.api.get_hwid().then(hwid => {
-      console.log("fetchHWID: API returned hwid =", hwid);
-      if (hwid) {
-        hwidValEl.innerText = hwid;
-      } else {
-        hwidValEl.innerText = "Unavailable";
-      }
+      hwidValEl.innerText = hwid || "Unavailable";
     }).catch(err => {
-      console.error("fetchHWID: Error calling get_hwid:", err);
+      console.error("fetchHWID: error calling get_hwid:", err);
       hwidValEl.innerText = "Error";
     });
   } else {
-    console.warn("fetchHWID: pywebview API or get_hwid not found. Falling back to mock.");
-    // Web Preview Simulation
-    setTimeout(() => {
-      hwidValEl.innerText = "MOCK-HWID-5F0C-61C1-A4AA-4797-BC54";
-    }, 800);
+    console.error("fetchHWID: pywebview API or get_hwid not available");
+    hwidValEl.innerText = "Unavailable";
   }
 }
 
@@ -765,30 +756,6 @@ function initUI() {
   renderGrid();
 
   // Hook Title Bar Buttons
-  document.getElementById("win-close").addEventListener("click", () => {
-    if (window.pywebview && window.pywebview.api && window.pywebview.api.close) {
-      window.pywebview.api.close();
-    } else {
-      window.close();
-    }
-  });
-
-  document.getElementById("win-min").addEventListener("click", () => {
-    if (window.pywebview && window.pywebview.api && window.pywebview.api.minimize) {
-      window.pywebview.api.minimize();
-    } else {
-      showToast("Simulation: Window Minimized", 'info');
-    }
-  });
-
-  document.getElementById("win-max").addEventListener("click", () => {
-    if (window.pywebview && window.pywebview.api && window.pywebview.api.maximize) {
-      window.pywebview.api.maximize();
-    } else {
-      showToast("Simulation: Window Maximized", 'info');
-    }
-  });
-
   // Modal triggers
   document.getElementById("btn-show-details").addEventListener("click", () => {
     document.getElementById("details-modal").classList.remove("hidden");
@@ -801,20 +768,20 @@ function initUI() {
   const btnSwitchAccount = document.getElementById("btn-switch-account");
   const modalSwitchAccount = document.getElementById("switch-account-modal");
   const listSwitchAccount = document.getElementById("switch-account-list");
-  
+
   if (btnSwitchAccount) {
     btnSwitchAccount.addEventListener("click", () => {
       if (!selectedSteamID) {
         showToast("No Steam account selected.", "error");
         return;
       }
-      
+
       const acc = steamAccounts.find(a => a.steamid === selectedSteamID);
       if (!acc) {
         showToast("Selected account details not found.", "error");
         return;
       }
-      
+
       showToast(`Switching to ${acc.persona_name}...`, "info");
       if (window.pywebview && window.pywebview.api && window.pywebview.api.switch_account) {
         window.pywebview.api.switch_account(acc.account_name).then(res => {
@@ -834,6 +801,7 @@ function initUI() {
     selectEl.addEventListener("change", (e) => {
       selectedSteamID = e.target.value;
       checkActivationStatusSilently();
+      fetchSteamProfile();
     });
   }
 
@@ -879,7 +847,7 @@ function initUI() {
     const icon = document.querySelector("#btn-refresh svg");
     icon.classList.add("spinning");
     showToast("Refreshing Library data...", 'info');
-    
+
     const reloadPromise = (window.pywebview && window.pywebview.api && window.pywebview.api.get_games)
       ? window.pywebview.api.get_games()
       : Promise.resolve(null);
@@ -929,8 +897,20 @@ function initUI() {
   });
 
   document.getElementById("btn-copy-tp-username").addEventListener("click", () => {
-    if (selectedGame) copyToClipboard(selectedGame.username, "Username");
+    const user = document.getElementById("tp-username").value;
+    if (user && user !== "N/A") {
+      copyToClipboard(user, "3rd-Party Username");
+    } else {
+      showToast("Username is empty.", "error");
+    }
   });
+
+  const btnCopyGlobalNotes = document.getElementById("btn-copy-global-notes");
+  if (btnCopyGlobalNotes) {
+    btnCopyGlobalNotes.addEventListener("click", () => {
+      copyToClipboard(document.getElementById("global-game-notes").value, "Game Notes");
+    });
+  }
 
   document.getElementById("btn-copy-tp-password").addEventListener("click", () => {
     const pass = document.getElementById("tp-password").value;
@@ -988,7 +968,6 @@ function initUI() {
 
   // CD Key Activation
   document.getElementById("btn-activate-cdkey").addEventListener("click", handleActivateCDKey);
-  document.getElementById("btn-existing-user").addEventListener("click", handleExistingUser);
   document.getElementById("btn-reset-activation").addEventListener("click", handleResetActivation);
 
   // Also allow Enter key in CD Key input
@@ -996,8 +975,10 @@ function initUI() {
     if (e.key === "Enter") handleActivateCDKey();
   });
 
-  // Wait briefly for pywebview to initialize
-  setTimeout(() => {
+  // Run backend-dependent init once the pywebview bridge is actually ready
+  // (a fixed setTimeout is a guess; pywebviewready is the real signal and
+  // fires reliably in the compiled exe where the bridge can take >500ms).
+  const initBackend = () => {
     if (window.pywebview && window.pywebview.api && window.pywebview.api.get_games) {
       window.pywebview.api.get_games().then(backendGames => {
         if (backendGames && backendGames.length > 0) {
@@ -1008,9 +989,26 @@ function initUI() {
       });
     }
     populateSteamIDDropdown().then(() => {
-      checkActivationStatusSilently();
+      const runSilentCheck = () => checkActivationStatusSilently();
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.verify_local_cdkey) {
+        window.pywebview.api.verify_local_cdkey().then(r => {
+          if (r && r.status === 'deleted') {
+            showToast("Activation removed: CD Key no longer exists on the server.", 'error');
+            updateActivationUI(false);
+          }
+          runSilentCheck();
+        }).catch(runSilentCheck);
+      } else {
+        runSilentCheck();
+      }
     });
-  }, 500);
+  };
+
+  if (window.pywebview && window.pywebview.api) {
+    initBackend();                                          // bridge already up
+  } else {
+    window.addEventListener("pywebviewready", initBackend); // wait for it
+  }
 }
 
 // Start Initialization
