@@ -263,6 +263,18 @@
     <!-- Notification Toast -->
     <div class="toast-container" id="toast-container"></div>
 
+    <!-- Autologin Overlay -->
+    <div id="autologin-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; color: #ef4444; text-align: center; padding: 20px; backdrop-filter: blur(5px);">
+        <svg viewBox="0 0 24 24" width="80" height="80" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 20px;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <h1 style="font-size: 28px; font-weight: bold; margin-bottom: 10px;">DO NOT INTERFERE</h1>
+        <p style="font-size: 18px; color: #f87171;">Please do not touch your keyboard or mouse during Autologin.</p>
+        <p style="font-size: 14px; color: #9ca3af; margin-top: 10px;">This warning will close automatically.</p>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>

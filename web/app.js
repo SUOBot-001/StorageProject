@@ -295,13 +295,34 @@ function showToast(message, type = 'info') {
       </svg>`;
   }
 
-  toast.innerHTML = `${icon} <span>${message}</span>`;
+  toast.innerHTML = `<span style="margin-right:8px; display:flex; align-items:center;">${icon}</span> <span>${message}</span>`;
   container.appendChild(toast);
-
+  
+  // Trigger animation
+  setTimeout(() => toast.classList.add("show"), 10);
+  
+  // Remove after 3 seconds
   setTimeout(() => {
-    toast.remove();
-  }, 4000); // 4 seconds duration to read detailed instructions
+    toast.classList.remove("show");
+    setTimeout(() => container.removeChild(toast), 300);
+  }, 3000);
 }
+
+window.showAutologinWarning = function() {
+  const overlay = document.getElementById("autologin-overlay");
+  if (overlay) {
+    overlay.style.display = "flex";
+    // Auto-hide as a failsafe
+    setTimeout(() => {
+      overlay.style.display = "none";
+    }, 15000);
+  }
+};
+
+window.hideAutologinWarning = function() {
+  const overlay = document.getElementById("autologin-overlay");
+  if (overlay) overlay.style.display = "none";
+};
 
 // Handle search queries and filter modes
 function applyFilters() {
@@ -742,25 +763,37 @@ function populateSteamIDDropdown() {
         selectEl.appendChild(option);
       });
 
-      if (selectedSteamID) {
-        selectEl.value = selectedSteamID;
-      } else {
-        // Try to match the currently logged in SteamID
-        if (window.pywebview && window.pywebview.api && window.pywebview.api.get_steam_profile) {
-          return window.pywebview.api.get_steam_profile().then(profile => {
-            if (profile && profile.steamid && profile.steamid !== "UNKNOWN") {
-              selectedSteamID = profile.steamid;
-              selectEl.value = selectedSteamID;
-            } else {
-              selectedSteamID = accounts[0].steamid;
-              selectEl.value = selectedSteamID;
-            }
-          });
-        } else {
-          selectedSteamID = accounts[0].steamid;
+      // First, check backend saved config
+      const savedPromise = (window.pywebview && window.pywebview.api && window.pywebview.api.get_saved_steam_id)
+        ? window.pywebview.api.get_saved_steam_id()
+        : Promise.resolve(null);
+        
+      return savedPromise.then(savedID => {
+        if (savedID) {
+          selectedSteamID = savedID;
           selectEl.value = selectedSteamID;
+        } else if (selectedSteamID) {
+          selectEl.value = selectedSteamID;
+        } else {
+          if (window.pywebview && window.pywebview.api && window.pywebview.api.get_steam_profile) {
+            return window.pywebview.api.get_steam_profile().then(profile => {
+              if (profile && profile.steamid && profile.steamid !== "UNKNOWN") {
+                selectedSteamID = profile.steamid;
+              } else {
+                selectedSteamID = accounts[0].steamid;
+              }
+              if (window.pywebview.api.save_steam_id) window.pywebview.api.save_steam_id(selectedSteamID);
+              selectEl.value = selectedSteamID;
+            });
+          } else {
+            selectedSteamID = accounts[0].steamid;
+            if (window.pywebview && window.pywebview.api && window.pywebview.api.save_steam_id) {
+              window.pywebview.api.save_steam_id(selectedSteamID);
+            }
+            selectEl.value = selectedSteamID;
+          }
         }
-      }
+      });
     } else {
       const option = document.createElement("option");
       option.value = "UNKNOWN";
@@ -844,7 +877,11 @@ function initUI() {
   if (selectEl) {
     selectEl.addEventListener("change", (e) => {
       selectedSteamID = e.target.value;
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.save_steam_id) {
+        window.pywebview.api.save_steam_id(selectedSteamID);
+      }
       checkActivationStatusSilently();
+      fetchSteamProfile();
     });
   }
 
