@@ -336,11 +336,14 @@ function handleFetchSteamGuard() {
 
   showToast("Establishing TLS Connection...", 'info');
 
-  const fetchGuardPromise = (window.pywebview && window.pywebview.api && window.pywebview.api.fetch_steam_guard)
-    ? window.pywebview.api.fetch_steam_guard(selectedGame.username)
-    : mockFetchSteamGuard(selectedGame.username);
+  if (!(window.pywebview && window.pywebview.api && window.pywebview.api.fetch_steam_guard)) {
+    btn.innerText = prevText;
+    btn.disabled = false;
+    showToast("Steam Guard fetch unavailable: backend not connected", 'error');
+    return;
+  }
 
-  fetchGuardPromise.then(result => {
+  window.pywebview.api.fetch_steam_guard(selectedGame.username).then(result => {
     btn.innerText = prevText;
     btn.disabled = false;
 
@@ -361,29 +364,13 @@ window.onSteamGuardFetched = function(code) {
   const dashes = document.getElementById("slot-dashes");
   dashes.innerText = code;
   dashes.classList.add("active");
-  
+
   showToast(`Steam Guard Code Fetched: ${code}`, 'success');
   copyToClipboard(code, "Steam Guard Code");
-  
+
   // Alert the user about auto-fill typing
   showToast("Auto-typing Code. Please click the Steam Code input field NOW!", "info");
 };
-
-// Simulated Steam Guard fetcher for preview
-function mockFetchSteamGuard(username) {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const mockCode = Array.from({length: 5}, () => 
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".charAt(Math.floor(Math.random() * 36))
-      ).join("");
-      
-      resolve({
-        success: true,
-        code: mockCode
-      });
-    }, 2000);
-  });
-}
 
 // Ruleset: ONLINE games require a 1 Year or Lifetime plan
 function isOnlineAllowed() {
@@ -428,14 +415,7 @@ function handleSteamLogin() {
       }
     });
   } else {
-    // Web Preview Simulation
-    setTimeout(() => {
-      showToast("Simulation: Steam Launched with credentials. Connecting Gmail...", 'success');
-      setTimeout(() => {
-        const mockCode = "X77TH";
-        onSteamGuardFetched(mockCode);
-      }, 3000);
-    }, 1000);
+    showToast("Cannot launch Steam: backend not connected", 'error');
   }
 }
 
@@ -471,12 +451,9 @@ function fetchSteamProfile() {
       checkActivationStatusSilently();
     });
   } else {
-    // Web Preview
-    setTimeout(() => {
-      personaEl.innerText = "SugaGamer";
-      idEl.innerText = "SteamID: 76561198000000000";
-      updateActivationUI(true, 'Standard');
-    }, 500);
+    console.error("displayProfile: pywebview API or get_steam_profile not available");
+    personaEl.innerText = "Not detected";
+    idEl.innerText = "SteamID: Not detected";
   }
 }
 
@@ -528,14 +505,9 @@ function handleActivateCDKey() {
         status.className = "cdkey-status error";
       });
     } else {
-      // Web Preview
-      setTimeout(() => {
-        status.innerText = "CD Key validated! (Preview Mode)";
-        status.className = "cdkey-status success";
-        showToast("CD Key activated successfully. (Preview Mode)", 'success');
-        updateActivationUI(true, 'Standard', cdKey);
-        autoCloseActivationModal();
-      }, 1000);
+      status.innerText = "Cannot validate: backend not connected.";
+      status.className = "cdkey-status error";
+      showToast("Cannot validate CD Key: backend not connected", 'error');
     }
   });
 }
@@ -578,7 +550,7 @@ function updateActivationUI(isActive, planName = null, cdKey = null) {
     if (modalPlan) {
       modalPlan.innerText = planName || "Standard";
     }
-    
+
     if (btnDownload) btnDownload.disabled = false;
     if (btnRefresh) btnRefresh.disabled = false;
     if (btnSearch) btnSearch.disabled = false;
@@ -611,7 +583,7 @@ function updateActivationUI(isActive, planName = null, cdKey = null) {
     if (btnDownload) btnDownload.disabled = true;
     if (btnRefresh) btnRefresh.disabled = true;
     if (btnSearch) btnSearch.disabled = true;
-    
+
     if (detailsModal) detailsModal.classList.remove("hidden");
     if (btnCloseModal) btnCloseModal.style.display = "none";
 
@@ -681,15 +653,11 @@ function handleResetActivation() {
       status.className = "cdkey-status error";
     });
   } else {
-    // Web Preview
-    setTimeout(() => {
-      btn.innerText = prevText;
-      btn.disabled = false;
-      status.innerText = "Activation reset! (Preview Mode)";
-      status.className = "cdkey-status success";
-      showToast("Activation reset successfully! (Preview Mode)", 'success');
-      updateActivationUI(false);
-    }, 1000);
+    btn.innerText = prevText;
+    btn.disabled = false;
+    status.innerText = "Cannot reset: backend not connected.";
+    status.className = "cdkey-status error";
+    showToast("Cannot reset activation: backend not connected", 'error');
   }
 }
 
@@ -702,10 +670,7 @@ function populateSteamIDDropdown() {
 
   const fetchPromise = (window.pywebview && window.pywebview.api && window.pywebview.api.get_all_steam_ids)
     ? window.pywebview.api.get_all_steam_ids()
-    : Promise.resolve([
-        { steamid: "76561198000000001", persona_name: "GamerPro" },
-        { steamid: "76561198000000002", persona_name: "SugaGamer" }
-      ]);
+    : Promise.resolve([]);
 
   return fetchPromise.then(accounts => {
     steamAccounts = accounts || [];
@@ -716,7 +681,7 @@ function populateSteamIDDropdown() {
         option.innerText = `${acc.persona_name} (${acc.steamid})`;
         selectEl.appendChild(option);
       });
-      
+
       if (selectedSteamID) {
         selectEl.value = selectedSteamID;
       } else {
@@ -752,36 +717,19 @@ function populateSteamIDDropdown() {
 function fetchHWID() {
   const hwidValEl = document.getElementById("hwid-value");
   if (!hwidValEl) return;
-  
+
   hwidValEl.innerText = "Retrieving...";
-  
-  console.log("fetchHWID: starting...");
-  console.log("fetchHWID: window.pywebview =", window.pywebview);
-  if (window.pywebview) {
-    console.log("fetchHWID: window.pywebview.api =", window.pywebview.api);
-    if (window.pywebview.api) {
-      console.log("fetchHWID: window.pywebview.api.get_hwid =", window.pywebview.api.get_hwid);
-    }
-  }
 
   if (window.pywebview && window.pywebview.api && window.pywebview.api.get_hwid) {
     window.pywebview.api.get_hwid().then(hwid => {
-      console.log("fetchHWID: API returned hwid =", hwid);
-      if (hwid) {
-        hwidValEl.innerText = hwid;
-      } else {
-        hwidValEl.innerText = "Unavailable";
-      }
+      hwidValEl.innerText = hwid || "Unavailable";
     }).catch(err => {
-      console.error("fetchHWID: Error calling get_hwid:", err);
+      console.error("fetchHWID: error calling get_hwid:", err);
       hwidValEl.innerText = "Error";
     });
   } else {
-    console.warn("fetchHWID: pywebview API or get_hwid not found. Falling back to mock.");
-    // Web Preview Simulation
-    setTimeout(() => {
-      hwidValEl.innerText = "MOCK-HWID-5F0C-61C1-A4AA-4797-BC54";
-    }, 800);
+    console.error("fetchHWID: pywebview API or get_hwid not available");
+    hwidValEl.innerText = "Unavailable";
   }
 }
 
@@ -804,20 +752,20 @@ function initUI() {
   const btnSwitchAccount = document.getElementById("btn-switch-account");
   const modalSwitchAccount = document.getElementById("switch-account-modal");
   const listSwitchAccount = document.getElementById("switch-account-list");
-  
+
   if (btnSwitchAccount) {
     btnSwitchAccount.addEventListener("click", () => {
       if (!selectedSteamID) {
         showToast("No Steam account selected.", "error");
         return;
       }
-      
+
       const acc = steamAccounts.find(a => a.steamid === selectedSteamID);
       if (!acc) {
         showToast("Selected account details not found.", "error");
         return;
       }
-      
+
       showToast(`Switching to ${acc.persona_name}...`, "info");
       if (window.pywebview && window.pywebview.api && window.pywebview.api.switch_account) {
         window.pywebview.api.switch_account(acc.account_name).then(res => {
@@ -882,7 +830,7 @@ function initUI() {
     const icon = document.querySelector("#btn-refresh svg");
     icon.classList.add("spinning");
     showToast("Refreshing Library data...", 'info');
-    
+
     const reloadPromise = (window.pywebview && window.pywebview.api && window.pywebview.api.get_games)
       ? window.pywebview.api.get_games()
       : Promise.resolve(null);
@@ -1010,8 +958,10 @@ function initUI() {
     if (e.key === "Enter") handleActivateCDKey();
   });
 
-  // Wait briefly for pywebview to initialize
-  setTimeout(() => {
+  // Run backend-dependent init once the pywebview bridge is actually ready
+  // (a fixed setTimeout is a guess; pywebviewready is the real signal and
+  // fires reliably in the compiled exe where the bridge can take >500ms).
+  const initBackend = () => {
     if (window.pywebview && window.pywebview.api && window.pywebview.api.get_games) {
       window.pywebview.api.get_games().then(backendGames => {
         if (backendGames && backendGames.length > 0) {
@@ -1035,7 +985,13 @@ function initUI() {
         runSilentCheck();
       }
     });
-  }, 500);
+  };
+
+  if (window.pywebview && window.pywebview.api) {
+    initBackend();                                          // bridge already up
+  } else {
+    window.addEventListener("pywebviewready", initBackend); // wait for it
+  }
 }
 
 // Start Initialization
