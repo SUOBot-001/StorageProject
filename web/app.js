@@ -460,16 +460,15 @@ function fetchSteamProfile() {
           avatarEl.src = profile.avatar_url;
           avatarEl.style.display = "block";
         }
-        checkActivationStatusSilently();
       } else {
         personaEl.innerText = "Not logged in";
         idEl.innerText = "SteamID: Not detected";
-        updateActivationUI(false);
       }
+      checkActivationStatusSilently();
     }).catch(() => {
       personaEl.innerText = "Error";
       idEl.innerText = "SteamID: Error";
-      updateActivationUI(false);
+      checkActivationStatusSilently();
     });
   } else {
     // Web Preview
