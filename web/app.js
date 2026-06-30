@@ -528,6 +528,47 @@ function handleActivateCDKey() {
   });
 }
 
+// One-click activation for returning users: match local SteamID + HWID
+// against the server and activate automatically if a record is found.
+function handleAutoActivate() {
+  const status = document.getElementById("cdkey-status");
+  const btn = document.getElementById("btn-auto-activate");
+  if (!status) return;
+
+  if (!(window.pywebview && window.pywebview.api && window.pywebview.api.auto_activate_existing)) {
+    status.innerText = "Cannot auto-activate: backend not connected.";
+    status.className = "cdkey-status error";
+    showToast("Cannot auto-activate: backend not connected", 'error');
+    return;
+  }
+
+  const prevText = btn ? btn.innerText : "";
+  if (btn) { btn.disabled = true; btn.innerText = "Checking your device..."; }
+  status.innerText = "Matching this device against the server...";
+  status.className = "cdkey-status";
+
+  const currentId = selectedSteamID || null;
+  window.pywebview.api.auto_activate_existing(currentId).then(result => {
+    if (btn) { btn.disabled = false; btn.innerText = prevText; }
+    if (result.status === 'success') {
+      status.innerText = result.message;
+      status.className = "cdkey-status success";
+      showToast(result.message, 'success');
+      updateActivationUI(true, result.activation_type || 'Standard', result.cd_key);
+      autoCloseActivationModal();
+    } else {
+      status.innerText = result.message;
+      status.className = "cdkey-status error";
+      showToast(result.message, 'error');
+    }
+  }).catch(err => {
+    if (btn) { btn.disabled = false; btn.innerText = prevText; }
+    status.innerText = "Auto-activation error.";
+    status.className = "cdkey-status error";
+    showToast(`Auto-activation error: ${err}`, 'error');
+  });
+}
+
 // Helper to automatically close the modal after successful activation
 function autoCloseActivationModal() {
   setTimeout(() => {
@@ -549,6 +590,7 @@ function updateActivationUI(isActive, planName = null, cdKey = null) {
   const btnCloseModal = document.getElementById("btn-close-modal");
   const cdkeyInput = document.getElementById("cdkey-input");
   const btnActivate = document.getElementById("btn-activate-cdkey");
+  const btnAutoActivate = document.getElementById("btn-auto-activate");
 
   if (isActive) {
     if (bannerBadge) {
@@ -579,6 +621,7 @@ function updateActivationUI(isActive, planName = null, cdKey = null) {
       cdkeyInput.classList.add("disabled-input");
     }
     if (btnActivate) { btnActivate.disabled = true; btnActivate.classList.add("disabled-input"); }
+    if (btnAutoActivate) { btnAutoActivate.disabled = true; btnAutoActivate.classList.add("disabled-input"); }
   } else {
     if (bannerBadge) {
       bannerBadge.innerText = "INACTIVE";
@@ -610,6 +653,7 @@ function updateActivationUI(isActive, planName = null, cdKey = null) {
       cdkeyInput.classList.remove("disabled-input");
     }
     if (btnActivate) { btnActivate.disabled = false; btnActivate.classList.remove("disabled-input"); }
+    if (btnAutoActivate) { btnAutoActivate.disabled = false; btnAutoActivate.classList.remove("disabled-input"); }
   }
 
   // Re-evaluate online-game lock now that the plan may have changed
@@ -801,7 +845,6 @@ function initUI() {
     selectEl.addEventListener("change", (e) => {
       selectedSteamID = e.target.value;
       checkActivationStatusSilently();
-      fetchSteamProfile();
     });
   }
 
@@ -968,6 +1011,7 @@ function initUI() {
 
   // CD Key Activation
   document.getElementById("btn-activate-cdkey").addEventListener("click", handleActivateCDKey);
+  document.getElementById("btn-auto-activate").addEventListener("click", handleAutoActivate);
   document.getElementById("btn-reset-activation").addEventListener("click", handleResetActivation);
 
   // Also allow Enter key in CD Key input
